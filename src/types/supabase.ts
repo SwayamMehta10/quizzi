@@ -6,277 +6,151 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      topics: {
+      friend_requests: {
         Row: {
-          id: string
-          name: string
-          description: string | null
-          icon_url: string | null
           created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string | null
         }
         Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          icon_url?: string | null
           created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string | null
         }
         Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          icon_url?: string | null
           created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string | null
         }
-        Relationships: []
-      },
-      questions: {
+        Relationships: [
+          {
+            foreignKeyName: "friend_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friends: {
         Row: {
-          id: string
-          topic_id: string
-          question_text: string
-          correct_answer: string
-          wrong_answers: string[]
           created_at: string
+          id: string
+          user_id1: string
+          user_id2: string
         }
         Insert: {
-          id?: string
-          topic_id: string
-          question_text: string
-          correct_answer: string
-          wrong_answers: string[]
           created_at?: string
+          id?: string
+          user_id1: string
+          user_id2: string
         }
         Update: {
-          id?: string
-          topic_id?: string
-          question_text?: string
-          correct_answer?: string
-          wrong_answers?: string[]
           created_at?: string
+          id?: string
+          user_id1?: string
+          user_id2?: string
         }
         Relationships: [
           {
-            foreignKeyName: "questions_topic_id_fkey"
-            columns: ["topic_id"]
+            foreignKeyName: "friends_user_id1_fkey"
+            columns: ["user_id1"]
             isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      matches: {
-        Row: {
-          id: string
-          topic_id: string
-          started_at: string
-          ended_at: string | null
-          status: 'waiting' | 'active' | 'completed'
-        }
-        Insert: {
-          id?: string
-          topic_id: string
-          started_at?: string
-          ended_at?: string | null
-          status?: 'waiting' | 'active' | 'completed'
-        }
-        Update: {
-          id?: string
-          topic_id?: string
-          started_at?: string
-          ended_at?: string | null
-          status?: 'waiting' | 'active' | 'completed'
-        }
-        Relationships: [
-          {
-            foreignKeyName: "matches_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      match_participants: {
-        Row: {
-          id: string
-          match_id: string
-          user_id: string
-          score: number
-          joined_at: string
-          is_winner: boolean
-        }
-        Insert: {
-          id?: string
-          match_id: string
-          user_id: string
-          score?: number
-          joined_at?: string
-          is_winner?: boolean
-        }
-        Update: {
-          id?: string
-          match_id?: string
-          user_id?: string
-          score?: number
-          joined_at?: string
-          is_winner?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_participants_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "match_participants_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "friends_user_id2_fkey"
+            columns: ["user_id2"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      answers: {
-        Row: {
-          id: string
-          match_id: string
-          user_id: string
-          question_id: string
-          selected_answer: string
-          is_correct: boolean
-          answered_at: string
-        }
-        Insert: {
-          id?: string
-          match_id: string
-          user_id: string
-          question_id: string
-          selected_answer: string
-          is_correct: boolean
-          answered_at?: string
-        }
-        Update: {
-          id?: string
-          match_id?: string
-          user_id?: string
-          question_id?: string
-          selected_answer?: string
-          is_correct?: boolean
-          answered_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answers_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "matches"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "answers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "answers_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          }
         ]
-      },
-      users: {
+      }
+      profiles: {
         Row: {
-          id: string
-          username: string
-          email: string
           avatar_url: string | null
           country: string | null
           created_at: string
+          dob: string | null
+          email: string | null
+          gender: string | null
+          id: string
+          updated_at: string
+          username: string | null
         }
         Insert: {
-          id?: string
-          username: string
-          email: string
           avatar_url?: string | null
           country?: string | null
           created_at?: string
+          dob?: string | null
+          email?: string | null
+          gender?: string | null
+          id: string
+          updated_at: string
+          username?: string | null
         }
         Update: {
-          id?: string
-          username?: string
-          email?: string
           avatar_url?: string | null
           country?: string | null
           created_at?: string
+          dob?: string | null
+          email?: string | null
+          gender?: string | null
+          id?: string
+          updated_at?: string
+          username?: string | null
         }
         Relationships: []
-      },
-      user_topic_xp: {
-        Row: {
-          id: string
-          user_id: string
-          topic_id: string
-          xp: number
-          level: number
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          topic_id: string
-          xp?: number
-          level?: number
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          topic_id?: string
-          xp?: number
-          level?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_topic_xp_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_topic_xp_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "topics"
-            referencedColumns: ["id"]
-          }
-        ]
       }
-    },
+    }
     Views: {
-      global_leaderboard: {
-        Row: {
-          user_id: string
-          total_xp: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "global_leaderboard_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       [_ in never]: never
@@ -289,3 +163,117 @@ export interface Database {
     }
   }
 }
+
+type DefaultSchema = Database[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const

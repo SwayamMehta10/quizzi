@@ -1,0 +1,48 @@
+/* Fix for the date picker dropdown visibility */
+
+/* Target the month and year dropdown select elements */
+.calendar-dropdown-fix select {
+  color: rgba(0, 0, 0, 0.8) !important; /* Force text color for dropdowns */
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.375rem !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+/* Style the dropdown options */
+.calendar-dropdown-fix select option {
+  color: black !important;
+  background-color: white !important;
+}
+
+/* Fix for the dropdown container */
+.calendar-dropdown-fix [data-radix-select-trigger] {
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Specific shadcn calendar styles override */
+.calendar-dropdown-fix .rdp-caption_dropdowns {
+  background-color: white;
+  padding: 4px;
+}
+
+/* Ensure the caption label is visible */
+.calendar-dropdown-fix .rdp-caption_label {
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Override for the shadcn dropdown select elements */
+.calendar-dropdown-fix .rdp-dropdown {
+  color: black !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Fix for dark mode themes */
+:where(.dark) .calendar-dropdown-fix select,
+:where(.dark) .calendar-dropdown-fix select option,
+:where(.dark) .calendar-dropdown-fix .rdp-caption_label {
+  color: white !important;
+  background-color: #1e1e1e !important;
+  border-color: #333 !important;
+}
