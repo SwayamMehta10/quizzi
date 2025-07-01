@@ -60,6 +60,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         console.error('Error signing out:', error);
       } else {
         setIsLoggedIn(false);
+        window.location.href = "/";
       }
     } catch (error) {
       console.error('Sign out error:', error);

@@ -50,39 +50,37 @@ export default function Home() {
     
     const checkUser = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) {
-          console.error("Quack! Error checking auth session:", error);
+          console.error("Quack! Error checking auth user:", error);
           return;
         }
         
-        if (session) {
+        if (user) {
           setIsLoggedIn(true);
-          if (session.user) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            // Check for profile error (but ignore "no rows returned" error)
-            if (profileError && profileError.code !== 'PGRST116') {
-              console.error("Error fetching profile:", profileError);
-            }
-            
-            // If profile exists and has username, set user data
-            if (profile && profile.username) {
-              setUsername(profile.username);
-              setAvatar(profile.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
-            } else {
-              // No profile or no username - redirect to complete profile
-              window.location.href = "/complete-profile";
-            }
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          // Check for profile error (but ignore "no rows returned" error)
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Error fetching profile:", profileError);
+          }
+          
+          // If profile exists and has username, set user data
+          if (profile && profile.username) {
+            setUsername(profile.username);
+            setAvatar(profile.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
+          } else {
+            // No profile or no username - redirect to complete profile
+            window.location.href = "/complete-profile";
           }
         }
       } catch (err) {
-        console.error("Quack! Session check error:", err);
+        console.error("Quack! User check error:", err);
       } finally {
         setIsLoading(false);
       }
