@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function AuthCodeError() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col m-8">
       <div className="flex flex-col items-center justify-center flex-1">
         <div className="w-full max-w-md text-center">
           <h1 className="font-extrabold text-8xl text-primary tracking-tighter mb-8">QUIZZI</h1>
@@ -36,7 +36,7 @@ export default function AuthCodeError() {
           <p className="mb-6 text-muted-foreground">Please return to the home page to sign up or reset your password again. We appreciate your understanding!</p>
           
           <Link href="/">
-            <Button className="w-full">Return to Home</Button>
+            <Button className="w-full cursor-pointer">Return to Home</Button>
           </Link>
         </div>
       </div>

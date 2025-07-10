@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
+import { errorHandler } from "@/lib/error-handler";
 
 export const useFriendActions = (currentUserId: string) => {
 	const [sendingRequests, setSendingRequests] = useState<Set<string>>(new Set());
@@ -63,7 +66,7 @@ export const useFriendActions = (currentUserId: string) => {
 			onSuccess?.(userId);
 		} catch (error) {
 			console.error(`Error ${action}ing friend request:`, error);
-			alert(`Failed to ${action} friend request. Please try again.`);
+			errorHandler.generic(error, `${action} friend request`);
 		} finally {
 			setSendingRequests(prev => {
 				const newSet = new Set(prev);

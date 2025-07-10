@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { notify } from "@/lib/notifications";
+import { useRouter } from "next/navigation";
 
 // Schema for reset password form
 const resetPasswordSchema = z
@@ -24,9 +25,7 @@ const resetPasswordSchema = z
 type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPassword() {
-  const [isLoading, setIsLoading] = useState(false);  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  const supabase = createClient();
+  const router = useRouter();
 
   const form = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -37,51 +36,28 @@ export default function ResetPassword() {
   });
 
   const handleSubmit = async (values: ResetPasswordValues) => {
-    setIsLoading(true);
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password: values.password });
 
       if (error) {
-        setMessage({ type: "error", text: error.message });
+        notify.error(error.message);
       } else {
-        setMessage({ type: "success", text: "Password updated successfully! You can now log in with your new password." });
+        notify.success("Password updated successfully!");
         form.reset();
+        router.push("/");
       }
     } catch (error) {
       console.error("Error resetting password:", error);
-      setMessage({ type: "error", text: "An unexpected error occurred. Please try again." });
-    } finally {
-      setIsLoading(false);
+      notify.error("An unexpected error occurred. Please try again.");
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border/40 bg-background">
-        <div className="container flex h-16 max-w-screen-xl items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-extrabold text-2xl text-primary tracking-tighter">QUIZZI</span>
-          </Link>
-        </div>
-      </header>
-
       <div className="flex flex-col items-center justify-center flex-1 p-4">
         <div className="w-full max-w-md">
           <h1 className="text-2xl font-bold text-center mb-6">Reset Your Password</h1>
-          
-          {message && (
-            <div className={`p-3 mb-4 rounded ${message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-              {message.text}
-              {message.type === "success" && (
-                <div className="mt-2">
-                  <Link href="/">
-                    <Button variant="outline" className="w-full">Return to Home Page</Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="border rounded-lg p-6 bg-card shadow-sm">
             <Form {...form}>
@@ -114,8 +90,8 @@ export default function ResetPassword() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Updating..." : "Update Password"}
+                <Button type="submit" className="w-full">
+                  Update Password
                 </Button>
               </form>
             </Form>

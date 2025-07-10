@@ -56,7 +56,7 @@
   --popover-foreground: #121212;
   
   /* Primary color is QuizUp's signature purple */
-  --primary: #8e44ad;
+  --primary: #FF267A;
   --primary-foreground: #ffffff;
   
   --secondary: #f5f5f5;
@@ -64,29 +64,20 @@
   --muted: #f5f5f5;
   --muted-foreground: #64748b;
   --accent: #f5f5f5;
-  --accent-foreground: #8e44ad;
+  --accent-foreground: #FF267A;
   --destructive: #ef4444;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #8e44ad;
-  
-  /* Topic colors like QuizUp used */
-  --topic-history: #e74c3c;
-  --topic-science: #3498db;
-  --topic-geography: #2ecc71;
-  --topic-movies: #f1c40f;
-  --topic-music: #9b59b6;
-  --topic-sports: #e67e22;
-  --topic-tech: #1abc9c;
+  --ring: #FF267A;
   
   --sidebar: #ffffff;
   --sidebar-foreground: #121212;
-  --sidebar-primary: #8e44ad;
+  --sidebar-primary: #FF267A;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f5f5f5;
-  --sidebar-accent-foreground: #8e44ad;
+  --sidebar-accent-foreground: #FF267A;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #8e44ad;
+  --sidebar-ring: #FF267A;
 }
 
 .dark {
@@ -99,7 +90,7 @@
   --popover-foreground: #ffffff;
   
   /* Primary color is brighter in dark mode */
-  --primary: #9b59b6;
+  --primary: #FF267A;
   --primary-foreground: #ffffff;
   
   --secondary: #27272a;
@@ -107,11 +98,11 @@
   --muted: #27272a;
   --muted-foreground: #a1a1aa;
   --accent: #27272a;
-  --accent-foreground: #9b59b6;
+  --accent-foreground: #FF267A;
   --destructive: #ef4444;
   --border: #333333;
   --input: #333333;
-  --ring: #9b59b6;
+  --ring: #FF267A;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -133,5 +124,60 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Topic card dropdown animations */
+  .dropdown-enter {
+    animation: dropdown-slide-in 0.2s ease-out forwards;
+  }
+
+  .dropdown-exit {
+    animation: dropdown-slide-out 0.15s ease-in forwards;
+  }
+
+  @keyframes dropdown-slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes dropdown-slide-out {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+    }
+  }
+
+  /* Smooth pulse animation for challenge buttons */
+  .challenge-pulse {
+    animation: pulse-glow 2s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
   }
 }

@@ -1,40 +1,32 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TopicCard } from "@/components/topics/topic-card";
-import Link from "next/link";
 import { AuthForm } from "@/features/auth/auth-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ForgotPasswordForm } from "@/features/auth/forgot-password-form";
 import { LoginFormValues, SignupFormValues, ForgotPasswordValues } from "@/features/auth/schemas";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-
-const TOPICS_DATA = {
-  popular: [
-    { name: "History" },
-    { name: "Science" },
-    { name: "Movies" },
-    { name: "Geography" }
-  ],
-  trending: [
-    { name: "Music" },
-    { name: "Sports" },
-    { name: "Technology" },
-    { name: "Gaming" }
-  ],
-  new: [
-    { name: "Food & Drink" },
-    { name: "Gaming" },
-    { name: "Technology" },
-    { name: "Geography" }
-  ]
-};
+import { notify } from "@/lib/notifications";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const error_code = searchParams.get("error_code");
+    if (
+      error === "access_denied" &&
+      error_code === "otp_expired"
+    ) {
+      router.replace("/auth/auth-code-error");
+    }
+  }, [searchParams, router]);
+
   const supabase = createClient();
   
   const [isSignUpOpen, setIsSignUpOpen] = useState<boolean>(false);
@@ -52,32 +44,30 @@ export default function Home() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         
-        if (error) {
+        if (error || !user) {
           console.error("Quack! Error checking auth user:", error);
           return;
         }
         
-        if (user) {
-          setIsLoggedIn(true);
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          // Check for profile error (but ignore "no rows returned" error)
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Error fetching profile:", profileError);
-          }
-          
-          // If profile exists and has username, set user data
-          if (profile && profile.username) {
-            setUsername(profile.username);
-            setAvatar(profile.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
-          } else {
-            // No profile or no username - redirect to complete profile
-            window.location.href = "/complete-profile";
-          }
+        setIsLoggedIn(true);
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        // Check for profile error (but ignore "no rows returned" error)
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile:", profileError);
+        }
+        
+        // If profile exists and has username, set user data
+        if (profile && profile.username) {
+          setUsername(profile.username);
+          setAvatar(profile.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
+        } else {
+          // No profile or no username - redirect to complete profile
+          window.location.href = "/complete-profile";
         }
       } catch (err) {
         console.error("Quack! User check error:", err);
@@ -91,22 +81,24 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: string, session: Session | null) => {
         console.log("Auth state change:", event, session?.user?.id);
-        if (event === 'SIGNED_IN' && session) {
+        if (event == "PASSWORD_RECOVERY") {
+          router.push("/reset-password");
+        } else if (event === 'SIGNED_IN' && session) {
           setIsLoggedIn(true);
           checkUser();
-        }
-        if (event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT') {
           setIsLoggedIn(false);
           setUsername("Guest");
           setAvatar("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
         }
+        
       }
     );
     
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, router]);
 
   // Handler for login submission
   const handleLoginSubmit = async (values: LoginFormValues | SignupFormValues) => {
@@ -119,22 +111,22 @@ export default function Home() {
       
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          alert("Invalid email or password. Please try again.");
+          notify.error("Invalid email or password. Please try again.");
         } else if (error.message.includes("Email not confirmed")) {
-          alert("Your email has not been verified! Check your inbox for the verification link.");
+          notify.info("Your email has not been verified! Check your inbox for the verification link.");
         } else {
-          alert(`Login failed: ${error.message}`);
+          notify.auth.loginFailed(error.message);
         }
         return;
       }
       
       if (data?.user) {
         setIsLoggedIn(true);
-        alert("Logged in successfully!");
+        notify.auth.loginSuccess();
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("An unexpected error occurred during login.");
+      notify.error("An unexpected error occurred during login.");
     } finally {
       setIsLoading(false);
     }
@@ -149,14 +141,11 @@ export default function Home() {
       
       const { data, error } = await supabase.auth.signUp({
         email: signupValues.email,
-        password: signupValues.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-        }
+        password: signupValues.password
       });
       
       if (error) {
-        alert(`Signup failed: ${error.message}`);
+        notify.auth.signupFailed(error.message);
         return;
       }
       
@@ -164,16 +153,16 @@ export default function Home() {
         setIsSignUpOpen(false);
         
         if (data.user.identities?.length === 0) {
-          alert("An account with this email already exists.");
+          notify.info("An account with this email already exists.");
           return;
         }
         
         // Show success message - user will complete profile after email confirmation
-        alert("Please check your email to verify your account. After confirming, you'll be able to complete your profile setup.");
+        notify.auth.signupSuccess();
       }
     } catch (error) {
       console.error("Signup error:", error);
-      alert("An unexpected error occurred during signup.");
+      notify.error("An unexpected error occurred during signup.");
     } finally {
       setIsLoading(false);
     }
@@ -183,21 +172,18 @@ export default function Home() {
   const handleForgotPasswordSubmit = async (values: ForgotPasswordValues) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        values.email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { data, error } = await supabase.auth.resetPasswordForEmail(values.email);
       
-      if (error) {
+      if (error || !data) {
         console.error('Error resetting password:', error);
-        alert(`Password reset failed: ${error.message}`);
+        notify.error('An error occurred while resetting your password.');
       } else {
-        alert('Password reset email sent! Check your inbox.');
+        notify.auth.passwordResetSent();
         setIsForgotPasswordOpen(false);
       }
     } catch (error) {
       console.error('Password reset error:', error);
-      alert('An unexpected error occurred during password reset.');
+      notify.error('An unexpected error occurred during password reset.');
     } finally {
       setIsLoading(false);
     }
@@ -284,35 +270,6 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Featured Topics */}
-      <section className="container">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-extrabold tracking-tight">Featured Topics</h2>
-          <Link href="/topics">
-            <Button variant="link" className="text-sm text-muted-foreground cursor-pointer">See All</Button>
-          </Link>
-        </div>
-        <Tabs defaultValue="popular" className="w-full">
-          <TabsList className="grid w-full md:w-auto grid-cols-3 mb-6 bg-background border">
-            <TabsTrigger value="popular" className="data-[state=active]:bg-primary data-[state=active]:text-white">Popular</TabsTrigger>
-            <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-white">Trending</TabsTrigger>
-            <TabsTrigger value="new" className="data-[state=active]:bg-primary data-[state=active]:text-white">New</TabsTrigger>
-          </TabsList>
-          {Object.entries(TOPICS_DATA).map(([category, topics]) => (
-            <TabsContent key={category} value={category}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {topics.map((topic, i) => (
-                  <TopicCard 
-                    key={i} 
-                    name={topic.name}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </section>
     </div>
   );
 }

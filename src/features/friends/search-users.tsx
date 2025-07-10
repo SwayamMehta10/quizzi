@@ -1,19 +1,16 @@
-"use client";
+"use client"
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Check, X } from "lucide-react";
 import { useFriendActions } from "./use-friend-actions";
-
-interface UserProfile {
-	id: string;
-	username: string;
-	avatar_url: string;
-	gender: string;
-	relationshipStatus?: 'none' | 'request_sent' | 'request_received' | 'friends';
-}
+import { UserProfile } from "@/types/friends";
+import { notify } from "@/lib/notifications";
+import { errorHandler } from "@/lib/error-handler";
+import { validators } from "@/lib/validators";
 
 function SearchUsers({ userId }: { userId: string }) {
 	const [checkingUsername, setCheckingUsername] = useState<boolean>(false);
@@ -30,12 +27,12 @@ function SearchUsers({ userId }: { userId: string }) {
 
 	const findUsers = async () => {
 		if (!currentUser) {
-			window.location.href = "/";
 			return;
 		}
 		
-		if (searchTerm.length < 3) {
-			alert("Please enter at least 3 characters.");
+		const validation = validators.searchTerm(searchTerm);
+		if (!validation.isValid) {
+			notify.error(validation.message!);
 			return;
 		}
 		
@@ -64,7 +61,7 @@ function SearchUsers({ userId }: { userId: string }) {
 			setSearchResults(usersWithStatus);
 		} catch (error) {
 			console.error("Error fetching users:", error);
-			alert("An error occurred while searching for users.");
+			errorHandler.generic(error, "searching for users");
 		} finally {
 			setCheckingUsername(false);
 		}
@@ -142,6 +139,7 @@ function SearchUsers({ userId }: { userId: string }) {
 						variant="outline" 
 						onClick={() => handleFriendAction(user.id, 'send', (userId) => updateUserStatus(userId, 'request_sent'))}
 						disabled={isLoading}
+						className="cursor-pointer"
 					>
 						{isLoading ? "Sending..." : "Add Friend"}
 					</Button>
@@ -157,7 +155,7 @@ function SearchUsers({ userId }: { userId: string }) {
 					value={searchTerm} 
 					onChange={(e) => setSearchTerm(e.target.value)} 
 				/>
-				<Button onClick={findUsers} disabled={checkingUsername}>
+				<Button onClick={findUsers} disabled={checkingUsername} className="cursor-pointer">
 					{checkingUsername ? "Searching..." : "Search"}
 				</Button>
 			</div>

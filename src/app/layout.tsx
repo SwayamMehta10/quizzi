@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import LayoutWrapper from "@/components/layout-wrapper";
+import Header from "@/components/header";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,11 +13,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Quizzi",
-  description: "Trying to fill the void left by QuizUp",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,9 +23,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen flex flex-col items-center px-4 py-8`}
       >
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
+        <div className="w-full max-w-screen-xl mx-auto min-h-screen flex flex-col">
+          <Header/>
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
+        <Toaster />
       </body>
     </html>
   );

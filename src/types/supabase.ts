@@ -34,6 +34,221 @@ export type Database = {
   }
   public: {
     Tables: {
+      answers: {
+        Row: {
+          answer_id: string
+          answered_at: string | null
+          challenge_id: string | null
+          choice_id: string | null
+          is_correct: boolean
+          question_id: string | null
+          time_taken: number | null
+          user_id: string | null
+        }
+        Insert: {
+          answer_id?: string
+          answered_at?: string | null
+          challenge_id?: string | null
+          choice_id?: string | null
+          is_correct: boolean
+          question_id?: string | null
+          time_taken?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          answer_id?: string
+          answered_at?: string | null
+          challenge_id?: string | null
+          choice_id?: string | null
+          is_correct?: boolean
+          question_id?: string | null
+          time_taken?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "answers_choice_id_fkey"
+            columns: ["choice_id"]
+            isOneToOne: false
+            referencedRelation: "choices"
+            referencedColumns: ["choice_id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["question_id"]
+          },
+          {
+            foreignKeyName: "answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_questions: {
+        Row: {
+          challenge_id: string | null
+          id: string
+          order_index: number
+          question_id: string | null
+        }
+        Insert: {
+          challenge_id?: string | null
+          id?: string
+          order_index: number
+          question_id?: string | null
+        }
+        Update: {
+          challenge_id?: string | null
+          id?: string
+          order_index?: number
+          question_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_questions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["question_id"]
+          },
+        ]
+      }
+      challenge_results: {
+        Row: {
+          challenge_id: string
+          score: number
+          time_taken: number | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          score: number
+          time_taken?: number | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          score?: number
+          time_taken?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_results_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["challenge_id"]
+          },
+          {
+            foreignKeyName: "challenge_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          challenge_id: string
+          challenger_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          opponent_id: string | null
+          status: string | null
+          topic_id: string | null
+        }
+        Insert: {
+          challenge_id?: string
+          challenger_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          opponent_id?: string | null
+          status?: string | null
+          topic_id?: string | null
+        }
+        Update: {
+          challenge_id?: string
+          challenger_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          opponent_id?: string | null
+          status?: string | null
+          topic_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      choices: {
+        Row: {
+          choice_id: string
+          is_correct: boolean
+          question_id: string | null
+          text: string
+        }
+        Insert: {
+          choice_id?: string
+          is_correct?: boolean
+          question_id?: string | null
+          text: string
+        }
+        Update: {
+          choice_id?: string
+          is_correct?: boolean
+          question_id?: string | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "choices_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["question_id"]
+          },
+        ]
+      }
       friend_requests: {
         Row: {
           created_at: string
@@ -145,6 +360,59 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          created_at: string | null
+          difficulty: string
+          question_id: string
+          text: string
+          topic_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty: string
+          question_id?: string
+          text: string
+          topic_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          difficulty?: string
+          question_id?: string
+          text?: string
+          topic_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["topic_id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          created_at: string
+          icon_url: string | null
+          name: string
+          topic_id: string
+        }
+        Insert: {
+          created_at?: string
+          icon_url?: string | null
+          name: string
+          topic_id?: string
+        }
+        Update: {
+          created_at?: string
+          icon_url?: string | null
+          name?: string
+          topic_id?: string
         }
         Relationships: []
       }

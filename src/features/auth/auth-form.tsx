@@ -4,37 +4,39 @@ import { LoginFormValues, SignupFormValues } from "./schemas";
 import { LoginForm } from "./login-form";
 import { SignupForm } from "./signup-form";
 
-// Union type for both form types
-type FormValues = LoginFormValues | SignupFormValues;
-
-interface AuthFormProps {
-	formType: "login" | "signup";
-	onSubmit: (values: FormValues) => void;
-	onForgotPassword?: () => void;
-	loading?: boolean;
+interface LoginAuthFormProps {
+  formType: "login";
+  onSubmit: (values: LoginFormValues) => void;
+  onForgotPassword?: () => void;
+  loading?: boolean;
 }
 
-export function AuthForm({ 
-	formType: type, 
-	onSubmit, 
-	onForgotPassword, 
-	loading = false 
-}: AuthFormProps) {
-	const isLogin = type === "login";
-	return (
-		<>
-			{isLogin ? (
-				<LoginForm
-					onSubmit={onSubmit as (values: LoginFormValues) => void}
-					onForgotPassword={onForgotPassword}
-					loading={loading}
-				/>
-			) : (
-				<SignupForm
-					onSubmit={onSubmit as (values: SignupFormValues) => void}
-					loading={loading}
-				/>
-			)}
-		</>
-	);
+interface SignupAuthFormProps {
+  formType: "signup";
+  onSubmit: (values: SignupFormValues) => void;
+  onForgotPassword?: never;
+  loading?: boolean;
+}
+
+type AuthFormProps = LoginAuthFormProps | SignupAuthFormProps;
+
+export function AuthForm(props: AuthFormProps) {
+  const { formType, onSubmit, loading = false } = props;
+  
+  if (formType === "login") {
+    return (
+      <LoginForm
+        onSubmit={onSubmit}
+        onForgotPassword={props.onForgotPassword}
+        loading={loading}
+      />
+    );
+  } else {
+    return (
+      <SignupForm
+        onSubmit={onSubmit}
+        loading={loading}
+      />
+    );
+  }
 }

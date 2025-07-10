@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProfileSetupForm } from "@/features/auth/profile-setup-form";
 import { ProfileSetupValues } from "@/features/auth/schemas";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
+import { notify } from "@/lib/notifications";
 
 export default function CompleteProfilePage() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ export default function CompleteProfilePage() {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        alert("Authentication error. Please try logging in again.");
+        notify.error("Authentication error. Please try logging in again.");
         return;
       }
 
@@ -44,7 +45,7 @@ export default function CompleteProfilePage() {
 
       if (profileError) {
         console.error('Profile setup error:', profileError);
-        alert("Failed to save profile. Please try again.");
+        notify.error("Failed to save profile. Please try again.");
         return;
       }
 

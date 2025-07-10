@@ -32,7 +32,7 @@ import {
 	SelectValue
 } from "@/components/ui/select";
 import { CountryDropdown } from "@/components/ui/country-dropdown";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 
 import "./datePickerFix.css";
 
@@ -338,7 +338,7 @@ export function ProfileSetupForm({
 
 				<Button
 					type="submit"
-					className="w-full"
+					className="w-full cursor-pointer"
 					disabled={isSubmitDisabled}
 				>
 					{loading ? "Setting up profile..." : "Complete Profile"}

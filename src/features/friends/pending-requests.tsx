@@ -1,22 +1,22 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { useFriendActions } from "./use-friend-actions";
+import { UserProfile } from "@/types/friends";
 
-interface UserProfile {
-	id: string;
-	username: string;
-	avatar_url: string;
-	gender: string;
+interface PendingRequestsProps {
+  userId: string;
+  initialPendingRequests?: UserProfile[];
 }
 
-function PendingRequests({ userId }: { userId: string }) {
+function PendingRequests({ userId, initialPendingRequests = [] }: PendingRequestsProps) {
 	const supabase = createClient();
-	const [pendingRequests, setPendingRequests] = useState<UserProfile[]>([]);
+	const [pendingRequests, setPendingRequests] = useState<UserProfile[]>(initialPendingRequests);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	
 	const { handleFriendAction, sendingRequests } = useFriendActions(userId);
 
 	const removePendingRequest = (requestUserId: string) => {
@@ -25,6 +25,11 @@ function PendingRequests({ userId }: { userId: string }) {
 
 	useEffect(() => {
 		const getPendingRequests = async () => {
+			// Only fetch if no initial data was provided
+			if (initialPendingRequests.length > 0) {
+				return;
+			}
+
 			setIsLoading(true);
 
 			const { data: senders } = await supabase
@@ -50,7 +55,7 @@ function PendingRequests({ userId }: { userId: string }) {
 
 		getPendingRequests();
 
-	}, [supabase, userId]);
+	}, [supabase, userId, initialPendingRequests.length]);
 
   return (
 	<div className="max-h-96 overflow-y-auto rounded-lg border bg-background shadow-inner">
@@ -74,7 +79,7 @@ function PendingRequests({ userId }: { userId: string }) {
 							size="sm"
 							onClick={() => handleFriendAction(user.id, 'accept', removePendingRequest)}
 							disabled={sendingRequests.has(user.id)}
-							className="bg-green-600 hover:bg-green-700"
+							className="bg-green-600 hover:bg-green-700 cursor-pointer"
 						>
 							<Check className="w-4 h-4" />
 						</Button>
@@ -83,7 +88,7 @@ function PendingRequests({ userId }: { userId: string }) {
 							size="sm"
 							onClick={() => handleFriendAction(user.id, 'decline', removePendingRequest)}
 							disabled={sendingRequests.has(user.id)}
-							className="border-red-600 text-red-600 hover:bg-red-50"
+							className="border-red-600 text-red-600 hover:bg-red-50 cursor-pointer"
 						>
 							<X className="w-4 h-4" />
 						</Button>
