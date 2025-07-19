@@ -19,7 +19,7 @@ function SearchUsers({ userId }: { userId: string }) {
 	const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
 	const supabase = createClient();
 	
-	const { handleFriendAction, sendingRequests } = useFriendActions(userId);
+	const { handleFriendAction, sendingRequests } = useFriendActions();
 
 	useEffect(() => {
 		setCurrentUser({ id: userId });

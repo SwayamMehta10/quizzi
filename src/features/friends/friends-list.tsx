@@ -6,7 +6,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/types/friends";
 import { FaUserFriends } from "react-icons/fa";
-
+import Loader from "@/components/loader";
 
 interface FriendsListProps {
 	userId: string;
@@ -88,12 +88,11 @@ function FriendsList({ userId, mode = 'view', topicId, topicName, onChallengeSen
 
 		try {
 			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create_challenge_with_questions`,
+				`/api/challenges/create`,
 				{
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"Authorization": `Bearer ${accessToken}`
 					},
 					body: JSON.stringify({
 						topic_id: topicId,
@@ -122,7 +121,7 @@ function FriendsList({ userId, mode = 'view', topicId, topicName, onChallengeSen
 
 	return (
 		<div className="max-h-96 overflow-y-auto rounded-lg border bg-background shadow-inner">
-			{isLoading && <p className='p-4 text-center text-muted-foreground'>Loading friends list...</p>}
+			{isLoading && <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]"><Loader /></div>}
 			{friends.length > 0 ? (
 				<ul className="divide-y divide-muted">
 					{friends.map((user) => (

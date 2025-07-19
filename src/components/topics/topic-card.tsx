@@ -61,10 +61,10 @@ export function TopicCard({ name, iconUrl, topicId }: TopicCardProps) {
 	return (
 		<div className="relative" ref={cardRef}>
 			<div className="group cursor-pointer" onClick={handleCardClick}>
-				<div className={`relative w-60 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${showDropdown ? 'ring-2 ring-primary/50 shadow-lg' : ''}`}>
+				<div className={`relative w-full sm:w-60 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${showDropdown ? 'ring-2 ring-primary/50 shadow-lg' : ''}`}>
 					{/* Icon Container */}
-					<div className="w-full h-32 bg-gradient-to-br from-muted/50 to-muted/80 flex items-center justify-center p-4 group-hover:from-primary/10 group-hover:to-primary/20 transition-all duration-200">
-						<Avatar className="w-20 h-20 rounded-full">
+					<div className="w-full h-24 sm:h-32 bg-gradient-to-br from-muted/50 to-muted/80 flex items-center justify-center p-3 sm:p-4 group-hover:from-primary/10 group-hover:to-primary/20 transition-all duration-200">
+						<Avatar className="w-16 h-16 sm:w-20 sm:h-20 rounded-full">
 							{iconUrl && (
 								<AvatarImage 
 									src={iconUrl} 
@@ -81,7 +81,7 @@ export function TopicCard({ name, iconUrl, topicId }: TopicCardProps) {
 									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									className="w-10 h-10"
+									className="w-8 h-8 sm:w-10 sm:h-10"
 								>
 									<circle cx="12" cy="12" r="10" />
 									<path d="M12 16v-4" />
@@ -92,9 +92,9 @@ export function TopicCard({ name, iconUrl, topicId }: TopicCardProps) {
 					</div>
 					
 					{/* Text Container */}
-					<div className="p-4 bg-card">
+					<div className="p-3 sm:p-4 bg-card">
 						<div className="flex items-center justify-between">
-							<h3 className="text-base font-semibold text-card-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
+							<h3 className="text-sm sm:text-base font-semibold text-card-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
 								{name}
 							</h3>
 							<div className="flex items-center gap-1">
@@ -110,34 +110,34 @@ export function TopicCard({ name, iconUrl, topicId }: TopicCardProps) {
 				<div className="absolute top-full left-0 right-0 z-50 mt-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden dropdown-enter">
 					<Button
 						variant="ghost"
-						className="w-full justify-between gap-3 p-4 h-auto hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-950 rounded-none border-b border-border transition-all duration-200 cursor-pointer"
+						className="w-full justify-between gap-2 sm:gap-3 p-3 sm:p-4 h-auto hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-950 rounded-none border-b border-border transition-all duration-200 cursor-pointer"
 						onClick={handlePlay}
 					>
-						<div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center group-hover:bg-green-200">
-							<PlayIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+						<div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center group-hover:bg-green-200">
+							<PlayIcon className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
 						</div>
 						<div className="text-left flex-1">
-							<div className="font-semibold text-foreground">Quick Play</div>
-							<div className="text-sm text-muted-foreground">Compete online</div>
+							<div className="font-semibold text-foreground text-sm sm:text-base">Quick Play</div>
+							<div className="text-xs sm:text-sm text-muted-foreground">Compete online</div>
 						</div>
-						<div className="w-8 h-8 flex items-center justify-center">
-							<GamepadIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+						<div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
+							<GamepadIcon className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
 						</div>
 					</Button>
 					<Button
 						variant="ghost"
-						className="w-full justify-between gap-3 p-4 h-auto hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950 rounded-none border-t border-border transition-all duration-200 cursor-pointer"
+						className="w-full justify-between gap-2 sm:gap-3 p-3 sm:p-4 h-auto hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950 rounded-none border-t border-border transition-all duration-200 cursor-pointer"
 						onClick={handleChallenge}
 					>
-						<div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-							<UsersIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+						<div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+							<UsersIcon className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
 						</div>
 						<div className="text-left flex-1">
-							<div className="font-semibold text-foreground">Battle Mode</div>
-							<div className="text-sm text-muted-foreground">Challenge a friend</div>
+							<div className="font-semibold text-foreground text-sm sm:text-base">Battle Mode</div>
+							<div className="text-xs sm:text-sm text-muted-foreground">Challenge a friend</div>
 						</div>
-						<div className="w-8 h-8 flex items-center justify-center">
-							<SwordsIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+						<div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
+							<SwordsIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
 						</div>
 					</Button>
 				</div>

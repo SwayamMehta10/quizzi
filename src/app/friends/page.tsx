@@ -7,89 +7,81 @@ import { Badge } from "@/components/ui/badge";
 import { FaUserFriends } from "react-icons/fa";
 import { FaUsersViewfinder } from "react-icons/fa6";
 import { MdPending } from "react-icons/md";
-import { createClient } from "@/utils/supabase/client";
 import SearchUsers from "@/features/friends/search-users";
 import PendingRequests from "@/features/friends/pending-requests";
 import FriendsList from "@/features/friends/friends-list";
-import { User } from "@supabase/supabase-js";
 import { UserProfile } from "@/types/friends";
+import Loader from "@/components/loader";
+import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { OptimizedQueries } from "@/lib/optimized-queries";
 
 export default function FriendsPage() {
-	const [user, setUser] = useState<User | null>(null);
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false); // Start with false since we have userLoading
+	const [userLoading, setUserLoading] = useState(true);
 	const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 	const [friends, setFriends] = useState<UserProfile[]>([]);
 	const [pendingRequests, setPendingRequests] = useState<UserProfile[]>([]);
+	const [user, setUser] = useState<User | null>(null);
 	const router = useRouter();
 	const supabase = createClient();
 
 	useEffect(() => {
-		const checkAuthAndFetchData = async () => {
-			const { data: { user }, error } = await supabase.auth.getUser();
-			if (error || !user) {
+		const getUser = async () => {
+			try {
+				const { data: { user }, error } = await supabase.auth.getUser();
+				if (error) {
+					setUser(null);
+				} else {
+					setUser(user);
+				}
+			} catch (error) {
+				console.error('Friends page: Error in getUser:', error);
+				setUser(null);
+			} finally {
+				setUserLoading(false);
+			}
+		};
+		getUser();
+	}, [supabase]);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			// Don't redirect if we're still loading the user
+			if (userLoading) {
+				return;
+			}
+			if (!user) {
 				router.push("/");
 				return;
 			}
-			setUser(user);
-      console.log("User authenticated:", user);
-      console.log("Fetching friends and requests...");
+			setLoading(true);
+			try {
+				// Use optimized queries with caching
+				const [friendsData, pendingRequestsData] = await Promise.all([
+					OptimizedQueries.getFriendsOptimized(user.id),
+					OptimizedQueries.getPendingRequestsOptimized(user.id)
+				]);
 
-			// Fetch pending requests count
-			const { count } = await supabase
-				.from("friend_requests")
-				.select("*", { count: "exact", head: true })
-				.eq("receiver_id", user.id)
-				.eq("status", "pending");
-
-			setPendingRequestsCount(count || 0);
-
-			// Fetch friends
-			const { data: friendsData } = await supabase
-				.from("friends")
-				.select("user_id1, user_id2")
-				.or(`user_id1.eq.${user.id}, user_id2.eq.${user.id}`);
-
-			const friendIds =
-				friendsData?.map((row) =>
-					row.user_id1 === user.id ? row.user_id2 : row.user_id1
-				) || [];
-
-			if (friendIds.length > 0) {
-				const { data: friendsProfiles } = await supabase
-					.from("profiles")
-					.select("id, username, avatar_url, gender")
-					.in("id", friendIds);
-
-				setFriends(friendsProfiles || []);
+				setFriends(friendsData as UserProfile[]);
+				setPendingRequests(pendingRequestsData as UserProfile[]);
+				setPendingRequestsCount((pendingRequestsData as UserProfile[])?.length || 0);
+			} catch (error) {
+				console.error('Friends page: Error fetching friends data:', error);
+			} finally {
+				setLoading(false);
 			}
-
-			// Fetch pending requests
-			const { data: pendingRequestsData } = await supabase
-				.from("friend_requests")
-				.select("sender_id")
-				.eq("receiver_id", user.id)
-				.eq("status", "pending");
-
-			const senderIds =
-				pendingRequestsData?.map((req) => req.sender_id) || [];
-
-			if (senderIds.length > 0) {
-				const { data: pendingRequestsProfiles } = await supabase
-					.from("profiles")
-					.select("id, username, avatar_url, gender")
-					.in("id", senderIds);
-
-				setPendingRequests(pendingRequestsProfiles || []);
-			}
-
-			setLoading(false);
 		};
 
-		checkAuthAndFetchData();
-	}, [supabase, router]);
+		fetchData();
+	}, [user, userLoading, router]);
 
-	if (loading) {
-		return <div className="container py-12 md:py-8">Loading...</div>;
+	if (loading || userLoading) {
+		return (
+			<div className="flex items-center justify-center min-h-[calc(100vh-6rem)]">
+        		<Loader />
+      		</div>
+		);
 	}
 
 	return (

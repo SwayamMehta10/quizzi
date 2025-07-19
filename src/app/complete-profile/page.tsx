@@ -60,7 +60,7 @@ export default function CompleteProfilePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Complete Your Profile</h1>

@@ -10,9 +10,14 @@ export interface Challenge {
   challenger_id: string;
   opponent_id: string;
   topic_id: string;
-  status: string;
+  challenger_status: string;
+  opponent_status: string;
   created_at: string;
   challenger: UserProfile;
   opponent: UserProfile;
   topic: Topic;
+}
+
+export interface ChallengePageProps {
+  params: Promise<{ challengeId: string }>;
 }

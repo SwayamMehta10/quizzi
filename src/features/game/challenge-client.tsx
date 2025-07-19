@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Challenge } from "@/types/challenges";
-import { User } from "@supabase/supabase-js";
 import { errorHandler } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/loader";
+import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { OptimizedQueries } from "@/lib/optimized-queries";
 
 interface ChallengeClientProps {
   initialChallenges: Challenge[];
@@ -18,19 +20,17 @@ interface ChallengeClientProps {
 export default function ChallengeClient({ initialChallenges }: ChallengeClientProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isFetchingChallenges, setIsFetchingChallenges] = useState<boolean>(false);
   const supabase = createClient();
 
   const [challenges, setChallenges] = useState<Challenge[]>(initialChallenges);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      setIsLoading(false);
     };
-    checkAuth();
+    getUser();
   }, [supabase]);
 
   useEffect(() => {
@@ -44,25 +44,10 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
 
       try {
         setIsFetchingChallenges(true);
-
-        const { data } = await supabase
-        .from("challenges")
-        .select(`
-          *,
-          challenger:challenger_id (
-            id, username, avatar_url, gender
-          ),
-          opponent:opponent_id (
-            id, username, avatar_url, gender
-          ),
-          topic:topic_id (
-            topic_id, name
-          )
-        `)
-        .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`);
-
-        console.log("Challenges:", data);
-        setChallenges(data || []);
+        
+        // Use optimized query instead of the heavy JOIN query
+        const data = await OptimizedQueries.getChallengesOptimized(user.id);
+        setChallenges(data as Challenge[]);
       } catch (error) {
         errorHandler.generic(error, "Error fetching challenges:");
       } finally {
@@ -71,45 +56,42 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
     }
 
     fetchChallenges();
-  }, [user?.id, supabase, initialChallenges.length]);
+  }, [user?.id, initialChallenges.length]);
 
   const handleChallengeAction = (challengeId: string, action: 'play' | 'view-results') => {
     console.log(`Action: ${action}, Challenge ID: ${challengeId}`);
     if (action === 'play') {
-      router.push(`/challenges/${challengeId}/play`);
+      router.push(`/challenges/play/${challengeId}`);
     } else {
-      router.push(`/challenges/${challengeId}/result`);
+      router.push(`/challenges/results/${challengeId}`);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case 'completed':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
+  const getStatusBadge = (challenger_status: string, opponent_status: string) => {
+    if (challenger_status === 'pending' || opponent_status === 'pending') {
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">In Progress</Badge>;
+    } else {
+      return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
     }
   };
 
   const renderActionButton = (challenge: Challenge) => {
-    if (challenge.status === 'pending') {
-      if (user?.id === challenge.challenger_id) {
-        return (
-          <Button disabled className="bg-gray-100 text-gray-600 cursor-not-allowed">
-            Waiting for opponent
-          </Button>
-        );
-      } else if (user?.id === challenge.opponent_id) {
-        return (
+    if ((challenge.challenger_status === 'pending' && challenge.challenger_id == user?.id) || (challenge.opponent_status === 'pending' && challenge.opponent_id == user?.id)) {
+      return (
           <Button 
             onClick={() => handleChallengeAction(challenge.challenge_id, 'play')}
             className="bg-primary hover:bg-primary/90 text-white font-semibold cursor-pointer"
           >
             Play
           </Button>
+      )
+    } else if ((challenge.opponent_status === 'pending' && challenge.challenger_id == user?.id) || (challenge.challenger_status === 'pending' && challenge.opponent_id == user?.id)) {
+      return (
+          <Button disabled className="bg-gray-100 text-gray-600 cursor-not-allowed">
+            Waiting for opponent
+          </Button>
         );
-      }
-    } else if (challenge.status === 'completed') {
+    } else {
       return (
         <Button 
           onClick={() => handleChallengeAction(challenge.challenge_id, 'view-results')}
@@ -120,20 +102,15 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
         </Button>
       );
     }
-    return null;
   };
 
-  // Don't render if not authenticated or still loading
-  if (isLoading) {
-    return <div className="container py-12 md:py-8">Loading...</div>;
-  }
-
+  // Don't render if still loading
   if (isFetchingChallenges) {
-    return <div className="container py-12 md:py-8">Fetching challenges...</div>;
-  }
-
-  if (!user) {
-    return <div className="container py-12 md:py-8">Please log in to access this page.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-6rem)] py-12">
+        <Loader />
+      </div>
+    );
   }
 
   return (
@@ -150,12 +127,12 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {challenges.map((challenge) => (
             <Card key={challenge.challenge_id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-semibold text-primary">
                     {challenge.topic.name}
                   </CardTitle>
-                  {getStatusBadge(challenge.status)}
+                  {getStatusBadge(challenge.challenger_status, challenge.opponent_status)}
                 </div>
               </CardHeader>
               <CardContent>

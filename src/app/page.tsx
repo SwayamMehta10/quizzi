@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AuthForm } from "@/features/auth/auth-form";
@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ForgotPasswordForm } from "@/features/auth/forgot-password-form";
 import { LoginFormValues, SignupFormValues, ForgotPasswordValues } from "@/features/auth/schemas";
 import { createClient } from "@/utils/supabase/client";
-import { Session } from "@supabase/supabase-js";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { notify } from "@/lib/notifications";
+import { User, Session } from "@supabase/supabase-js";
+import { UserProfile } from "@/types/friends";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -32,73 +33,77 @@ export default function Home() {
   const [isSignUpOpen, setIsSignUpOpen] = useState<boolean>(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [username, setUsername] = useState<string>("Guest");
-  const [avatar, setAvatar] = useState<string>("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Check if user is already logged in when the page loads
+  // Simple auth check - let Header handle the main auth state
   useEffect(() => {
-    setIsLoading(true);
-    
     const checkUser = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
-          console.error("Quack! Error checking auth user:", error);
+          setUser(null);
+          setProfile(null);
           return;
         }
         
-        setIsLoggedIn(true);
-        const { data: profile, error: profileError } = await supabase
+        setUser(user);
+        
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
         
-        // Check for profile error (but ignore "no rows returned" error)
         if (profileError && profileError.code !== 'PGRST116') {
           console.error("Error fetching profile:", profileError);
+          return;
         }
         
-        // If profile exists and has username, set user data
-        if (profile && profile.username) {
-          setUsername(profile.username);
-          setAvatar(profile.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
+        setProfile(profileData);
+        
+        if (profileData && profileData.username) {
+          router.push("/topics");
         } else {
-          // No profile or no username - redirect to complete profile
-          window.location.href = "/complete-profile";
+          router.push("/complete-profile");
         }
       } catch (err) {
-        console.error("Quack! User check error:", err);
-      } finally {
-        setIsLoading(false);
+        console.error("User check error:", err);
+        setUser(null);
+        setProfile(null);
       }
     };
     
     checkUser();
     
+    // Simple auth state listener for this page only
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: string, session: Session | null) => {
-        console.log("Auth state change:", event, session?.user?.id);
-        if (event == "PASSWORD_RECOVERY") {
+        if (event === "PASSWORD_RECOVERY") {
           router.push("/reset-password");
         } else if (event === 'SIGNED_IN' && session) {
-          setIsLoggedIn(true);
-          checkUser();
-        } else if (event === 'SIGNED_OUT') {
-          setIsLoggedIn(false);
-          setUsername("Guest");
-          setAvatar("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png");
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profileData && profileData.username) {
+            router.push("/topics");
+          } else {
+            router.push("/complete-profile");
+          }
         }
-        
       }
     );
     
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [router, supabase]);
+
+  const isLoggedIn = !!user;
 
   // Handler for login submission
   const handleLoginSubmit = async (values: LoginFormValues | SignupFormValues) => {
@@ -117,17 +122,17 @@ export default function Home() {
         } else {
           notify.auth.loginFailed(error.message);
         }
+        setIsLoading(false);
         return;
       }
       
       if (data?.user) {
-        setIsLoggedIn(true);
         notify.auth.loginSuccess();
+        // Auth state change will handle the rest
       }
     } catch (error) {
       console.error("Login error:", error);
       notify.error("An unexpected error occurred during login.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -220,9 +225,13 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="border rounded-lg bg-card pb-4 shadow-sm flex flex-col items-center">
-                  <p className="text-lg font-medium p-4">Welcome back, {username}!</p>
+                  <p className="text-lg font-medium p-4">Welcome back, {profile?.username || 'User'}!</p>
                   <Avatar className="w-24 h-24 border-2 border-primary">
-                    <AvatarImage src={avatar} alt="User Avatar" className="object-cover"/>
+                    <AvatarImage 
+                      src={profile?.avatar_url || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"} 
+                      alt="User Avatar" 
+                      className="object-cover"
+                    />
                   </Avatar>
                 </div>
               )}
@@ -271,5 +280,13 @@ export default function Home() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

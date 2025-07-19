@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { useFriendActions } from "./use-friend-actions";
 import { UserProfile } from "@/types/friends";
+import Loader from "@/components/loader";
 
 interface PendingRequestsProps {
   userId: string;
@@ -17,7 +18,7 @@ function PendingRequests({ userId, initialPendingRequests = [] }: PendingRequest
 	const supabase = createClient();
 	const [pendingRequests, setPendingRequests] = useState<UserProfile[]>(initialPendingRequests);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const { handleFriendAction, sendingRequests } = useFriendActions(userId);
+	const { handleFriendAction, sendingRequests } = useFriendActions();
 
 	const removePendingRequest = (requestUserId: string) => {
 		setPendingRequests(prev => prev.filter(user => user.id !== requestUserId));
@@ -59,7 +60,7 @@ function PendingRequests({ userId, initialPendingRequests = [] }: PendingRequest
 
   return (
 	<div className="max-h-96 overflow-y-auto rounded-lg border bg-background shadow-inner">
-		{isLoading && <p className='p-4 text-center text-muted-foreground'>Loading pending requests...</p>}
+		{isLoading && <div className="flex items-center justify-center min-h-[calc(100vh-6rem)]"><Loader /></div>}
 		{pendingRequests.length > 0 ? (
 			<ul className="divide-y divide-muted">
 				{pendingRequests.map((user) => (
