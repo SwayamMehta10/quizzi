@@ -13,6 +13,7 @@ interface Answer {
   time_taken: number;
   correct_choice: string;
   question_order: number;
+  points_scored?: number;
 }
 
 interface PlayerResult {
@@ -127,7 +128,7 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
           question:question_id (
             question_id,
             text,
-            choices:question_id (
+            choices!choices_question_id_fkey (
               choice_id,
               text,
               is_correct
@@ -154,13 +155,20 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       throw new Error('Failed to fetch challenge data');
     }
 
-    // Process data
+    // Debug logging to see what data we're getting
+    // console.log("Answers data:", answersResult.data?.length, "records");
+    // console.log("Challenge participants:", challenge.challenger_id, challenge.opponent_id);
+    // console.log("Answer user IDs:", [...new Set(answersResult.data?.map(a => a.user_id))]);
+
+    // Process data using stored points
     const questionOrderMap = new Map(
-      questionsResult.data.map(cq => [cq.question_id, cq.order_index + 1])
+      questionsResult.data.map(cq => [cq.question_id, cq.order_index])
     );
 
     const challengerAnswers: Answer[] = [];
     const opponentAnswers: Answer[] = [];
+
+    // console.log("Question order mapping:", Array.from(questionOrderMap.entries()));
 
     answersResult.data?.forEach(answer => {
       const questionOrder = questionOrderMap.get(answer.question_id) || 0;
@@ -175,33 +183,38 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
         is_correct: answer.is_correct,
         time_taken: answer.time_taken || 10,
         correct_choice: correctChoice,
-        question_order: questionOrder
+        question_order: questionOrder,
+        points_scored: answer.points_scored || 0
       };
+
+      // console.log("Processing answer:", {
+      //   user_id: answer.user_id,
+      //   question_order: questionOrder,
+      //   is_challenger: answer.user_id === challenge.challenger_id,
+      //   is_opponent: answer.user_id === challenge.opponent_id
+      // });
 
       if (answer.user_id === challenge.challenger_id) {
         challengerAnswers.push(processedAnswer);
       } else if (answer.user_id === challenge.opponent_id) {
         opponentAnswers.push(processedAnswer);
+      } else {
+        console.warn("Answer from unknown user:", answer.user_id);
       }
     });
 
-    // Calculate scores with business logic
-    const calculateScore = (answers: Answer[]) => {
-      return answers.reduce((total, answer) => {
-        if (answer.is_correct) {
-          const baseScore = 10 + Math.max(0, 10 - answer.time_taken);
-          const multiplier = answer.question_order === 7 ? 2 : 1; // Double points for 7th question
-          return total + (baseScore * multiplier);
-        }
-        return total;
-      }, 0);
-    };
+    // Calculate total scores from stored points
+    const challengerScore = challengerAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
+    const opponentScore = opponentAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
+
+    // console.log("Processed answers - Challenger:", challengerAnswers.length, "Opponent:", opponentAnswers.length);
+    // console.log("Calculated scores - Challenger:", challengerScore, "Opponent:", opponentScore);
 
     const challengerResult: PlayerResult = {
       user_id: challenge.challenger_id,
       username: challenge.challenger.username,
       avatar_url: challenge.challenger.avatar_url || '',
-      total_score: calculateScore(challengerAnswers),
+      total_score: challengerScore,
       answers: challengerAnswers.sort((a, b) => a.question_order - b.question_order)
     };
 
@@ -209,7 +222,7 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       user_id: challenge.opponent_id,
       username: challenge.opponent.username,
       avatar_url: challenge.opponent.avatar_url || '',
-      total_score: calculateScore(opponentAnswers),
+      total_score: opponentScore,
       answers: opponentAnswers.sort((a, b) => a.question_order - b.question_order)
     };
 
@@ -245,7 +258,7 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
     const { challenger, opponent, topicName, winner: resultWinner, isCurrentUserWinner, isTie } = resultsData;
 
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto min-h-[calc(100vh-6rem)]">
         <ChallengeResults
           challenger={challenger}
           opponent={opponent}

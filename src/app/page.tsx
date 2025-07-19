@@ -12,6 +12,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { notify } from "@/lib/notifications";
 import { User, Session } from "@supabase/supabase-js";
 import { UserProfile } from "@/types/friends";
+import Loader from "@/components/loader";
 
 function HomeContent() {
   const router = useRouter();
@@ -63,9 +64,7 @@ function HomeContent() {
         
         setProfile(profileData);
         
-        if (profileData && profileData.username) {
-          router.push("/topics");
-        } else {
+        if (!profileData || !profileData.username) {
           router.push("/complete-profile");
         }
       } catch (err) {
@@ -89,9 +88,7 @@ function HomeContent() {
             .eq('id', session.user.id)
             .single();
           
-          if (profileData && profileData.username) {
-            router.push("/topics");
-          } else {
+          if (!profileData || !profileData.username) {
             router.push("/complete-profile");
           }
         }
@@ -285,7 +282,7 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-6rem)] flex items-center justify-center"><Loader /></div>}>
       <HomeContent />
     </Suspense>
   );

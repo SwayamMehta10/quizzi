@@ -30,7 +30,8 @@ export async function POST(request: Request) {
         topic_id,
         challenger_id,
         opponent_id,
-        status: "pending"
+        challenger_status: "pending",
+        opponent_status: "pending"
       })
       .select()
       .single();

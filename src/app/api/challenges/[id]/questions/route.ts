@@ -26,7 +26,7 @@ export async function GET(
     // Verify user is part of this challenge
     const { data: challenge, error: challengeError } = await supabase
       .from("challenges")
-      .select("challenger_id, opponent_id, status")
+      .select("challenger_id, opponent_id, challenger_status, opponent_status, status")
       .eq("challenge_id", challengeId)
       .single();
 
