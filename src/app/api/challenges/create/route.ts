@@ -58,9 +58,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No questions available for this topic" }, { status: 400 });
     }
 
-    // Randomly select 10 questions (or all if fewer than 10)
+    // Randomly select 7 questions (or all if fewer than 7)
     const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
-    const questions = shuffled.slice(0, Math.min(10, shuffled.length));
+    const questions = shuffled.slice(0, Math.min(7, shuffled.length));
 
     // Create challenge_questions entries
     const challengeQuestions = questions.map((q, index) => ({

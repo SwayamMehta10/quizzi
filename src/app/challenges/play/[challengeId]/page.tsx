@@ -130,11 +130,20 @@ export default async function PlayChallengePage({ params }: ChallengePageProps) 
       return null;
     }
     
+    // Create paired choices array to maintain choice_id and text relationship
+    const pairedChoices = cq.questions.choices?.map((c: Choice) => ({
+      id: c.choice_id,
+      text: c.text
+    })) || [];
+    
+    // Shuffle the paired choices to prevent correct answer from always being first
+    const shuffledChoices = [...pairedChoices].sort(() => 0.5 - Math.random());
+    
     return {
       question_id: cq.questions.question_id,
       text: cq.questions.text,
-      choices: cq.questions.choices?.map((c: Choice) => c.text) || [],
-      choice_ids: cq.questions.choices?.map((c: Choice) => c.choice_id) || []
+      choices: shuffledChoices.map(c => c.text),
+      choice_ids: shuffledChoices.map(c => c.id)
     };
   }).filter(q => q !== null) || [];
 

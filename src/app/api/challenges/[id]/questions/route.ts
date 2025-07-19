@@ -66,16 +66,21 @@ export async function GET(
 
     // Transform to secure format - NEVER include is_correct
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const secureQuestions: SecureQuestion[] = challengeQuestions?.map((cq: any) => ({
-      question_id: cq.question.question_id,
-      text: cq.question.text,
-      choices: cq.question.choices?.map((c: { choice_id: string; text: string }) => ({
-        choice_id: c.choice_id,
-        text: c.text
-        // SECURITY: is_correct field is NEVER sent to client
-      })) || [],
-      order_index: cq.order_index
-    })) || [];
+    const secureQuestions: SecureQuestion[] = challengeQuestions?.map((cq: any) => {
+      // Shuffle choices to prevent correct answer from always being first
+      const shuffledChoices = [...(cq.question.choices || [])].sort(() => 0.5 - Math.random());
+      
+      return {
+        question_id: cq.question.question_id,
+        text: cq.question.text,
+        choices: shuffledChoices.map((c: { choice_id: string; text: string }) => ({
+          choice_id: c.choice_id,
+          text: c.text
+          // SECURITY: is_correct field is NEVER sent to client
+        })),
+        order_index: cq.order_index
+      };
+    }) || [];
 
     return NextResponse.json({
       questions: secureQuestions,
