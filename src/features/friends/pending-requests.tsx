@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { useFriendActions } from "./use-friend-actions";
 import { UserProfile } from "@/types/friends";
+import { OptimizedQueries } from "@/lib/optimized-queries";
 import Loader from "@/components/loader";
 
 interface PendingRequestsProps {
@@ -33,25 +34,15 @@ function PendingRequests({ userId, initialPendingRequests = [] }: PendingRequest
 
 			setIsLoading(true);
 
-			const { data: senders } = await supabase
-				.from("friend_requests")
-				.select("sender_id")
-				.eq("receiver_id", userId)
-				.eq("status", "pending");
-
-			if (senders && senders.length > 0) {
-				const senderIds = senders.map((request) => request.sender_id);
-
-				const { data: users } = await supabase
-					.from("profiles")
-					.select("id, username, avatar_url, gender")
-					.in("id", senderIds);
-
-				if (users && users.length > 0) {
-					setPendingRequests(users);
-				}
+			try {
+				// Use optimized query
+				const requestsData = await OptimizedQueries.getPendingRequestsOptimized(userId);
+				setPendingRequests(requestsData);
+			} catch (error) {
+				console.error("Error fetching pending requests:", error);
+			} finally {
+				setIsLoading(false);
 			}
-			setIsLoading(false);
 		}
 
 		getPendingRequests();

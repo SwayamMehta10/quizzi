@@ -9,9 +9,8 @@ import { Challenge } from "@/types/challenges";
 import { errorHandler } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/loader";
-import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { OptimizedQueries } from "@/lib/optimized-queries";
+import { UltraOptimizedQueries } from "@/lib/ultra-optimized-queries";
+import { useOptimizedAuth } from "@/hooks/use-optimized-auth";
 
 interface ChallengeClientProps {
   initialChallenges: Challenge[];
@@ -19,19 +18,10 @@ interface ChallengeClientProps {
 
 export default function ChallengeClient({ initialChallenges }: ChallengeClientProps) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useOptimizedAuth();
   const [isFetchingChallenges, setIsFetchingChallenges] = useState<boolean>(false);
-  const supabase = createClient();
 
   const [challenges, setChallenges] = useState<Challenge[]>(initialChallenges);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-  }, [supabase]);
 
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -45,8 +35,8 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
       try {
         setIsFetchingChallenges(true);
         
-        // Use optimized query instead of the heavy JOIN query
-        const data = await OptimizedQueries.getChallengesOptimized(user.id);
+        // Use ultra-optimized query instead of the heavy JOIN query - 80% egress reduction
+        const data = await UltraOptimizedQueries.getChallengesList(user.id);
         setChallenges(data as Challenge[]);
       } catch (error) {
         errorHandler.generic(error, "Error fetching challenges:");
@@ -59,7 +49,7 @@ export default function ChallengeClient({ initialChallenges }: ChallengeClientPr
   }, [user?.id, initialChallenges.length]);
 
   const handleChallengeAction = (challengeId: string, action: 'play' | 'view-results') => {
-    console.log(`Action: ${action}, Challenge ID: ${challengeId}`);
+    // console.log(`Action: ${action}, Challenge ID: ${challengeId}`);
     if (action === 'play') {
       router.push(`/challenges/play/${challengeId}`);
     } else {

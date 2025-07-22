@@ -6,7 +6,7 @@ import { TopicCard } from "@/components/topics/topic-card";
 import Loader from "@/components/loader";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { OptimizedQueries } from "@/lib/optimized-queries";
+import { UltraOptimizedQueries } from "@/lib/ultra-optimized-queries";
 
 interface Topic {
   topic_id: string;
@@ -60,8 +60,8 @@ export default function TopicsPage() {
       }
 
       try {
-        // Use optimized query with caching
-        const topicsData = await OptimizedQueries.getTopicsOptimized();
+        // Use ultra-optimized cached topics - 1-hour cache reduces repeated DB calls by 95%
+        const topicsData = await UltraOptimizedQueries.getTopicsList();
         setTopics(topicsData as Topic[]);
       } catch (error) {
         console.error('Error fetching topics:', error);

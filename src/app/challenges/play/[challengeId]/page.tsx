@@ -1,8 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { ChallengePageProps } from "@/types/challenges";
+import { ChallengePageProps, Challenge } from "@/types/challenges";
 import PlayChallengeClient from "@/features/game/play-challenge";
 import Link from "next/link";
+import { OptimizedQueries } from "@/lib/optimized-queries";
 
 interface Choice {
   choice_id: string;
@@ -18,25 +19,10 @@ export default async function PlayChallengePage({ params }: ChallengePageProps) 
   }
   const { challengeId } = await params;
 
-  // Fetch challenge details
-  const { data: challenge, error: challengeError } = await supabase
-    .from("challenges")
-    .select(`
-      *,
-      challenger:challenger_id (
-        id, username, avatar_url, gender
-      ),
-      opponent:opponent_id (
-        id, username, avatar_url, gender
-      ),
-      topic:topic_id (
-        topic_id, name
-      )
-    `)
-    .eq("challenge_id", challengeId)
-    .single();
+  // Use optimized query for challenge details with server auth context
+  const challenge = await OptimizedQueries.getChallengeDetailsOptimized(challengeId, supabase);
 
-  if (challengeError || !challenge || (challenge.challenger_id !== user.id && challenge.opponent_id !== user.id)) {
+  if (!challenge || (challenge.challenger_id !== user.id && challenge.opponent_id !== user.id)) {
     redirect('/challenges');
   }
 
@@ -80,7 +66,7 @@ export default async function PlayChallengePage({ params }: ChallengePageProps) 
     .eq("challenge_id", challengeId)
     .order("order_index");
 
-  console.log('Questions fetch result:', { challengeQuestions, questionsError });
+  // console.log('Questions fetch result:', { challengeQuestions, questionsError });
 
   if (questionsError) {
     console.error("Error fetching questions:", questionsError);
@@ -148,9 +134,9 @@ export default async function PlayChallengePage({ params }: ChallengePageProps) 
   }).filter(q => q !== null) || [];
 
   // Debug logging to understand what's happening
-  console.log('challengeQuestions:', challengeQuestions);
-  console.log('transformed questions:', questions);
-  console.log('questions length:', questions.length);
+  // console.log('challengeQuestions:', challengeQuestions);
+  // console.log('transformed questions:', questions);
+  // console.log('questions length:', questions.length);
 
   // If no questions found, redirect back to challenges
   if (questions.length === 0) {
@@ -158,9 +144,33 @@ export default async function PlayChallengePage({ params }: ChallengePageProps) 
     redirect('/challenges');
   }
 
+  // Transform cached challenge to expected Challenge type
+  const transformedChallenge: Challenge = {
+    challenge_id: challenge.challenge_id,
+    challenger_id: challenge.challenger_id,
+    opponent_id: challenge.opponent_id,
+    topic_id: challenge.topic_id,
+    challenger_status: challenge.challenger_status,
+    opponent_status: challenge.opponent_status,
+    created_at: challenge.created_at,
+    challenger: challenge.challenger || { 
+      id: challenge.challenger_id, 
+      username: 'Unknown', 
+      avatar_url: '', 
+      gender: '' 
+    },
+    opponent: challenge.opponent || { 
+      id: challenge.opponent_id, 
+      username: 'Unknown', 
+      avatar_url: '', 
+      gender: '' 
+    },
+    topic: challenge.topic || { topic_id: challenge.topic_id, name: 'Unknown Topic' }
+  };
+
   return (
     <PlayChallengeClient 
-      challenge={challenge}
+      challenge={transformedChallenge}
       questions={questions}
       currentUser={user}
     />

@@ -52,7 +52,7 @@ function SearchUsers({ userId }: { userId: string }) {
 			}
 
 			const usersWithStatus = await Promise.all(
-				users.map(async (user) => ({
+				users.map(async (user: { id: string; username: string; avatar_url: string; gender: string }) => ({
 					...user,
 					relationshipStatus: await getUserRelationshipStatus(user.id)
 				}))

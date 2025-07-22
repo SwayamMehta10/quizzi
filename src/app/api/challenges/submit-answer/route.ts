@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const requestBody = await request.json();
-    console.log('Request body:', requestBody);
+    // console.log('Request body:', requestBody);
     
     const { 
       challengeId, 
@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
       questionOrder
     }: AnswerSubmissionRequest = requestBody;
 
-    console.log('Submit-answer API - User ID:', user.id);
-    console.log('Submit-answer API - Challenge ID:', challengeId);
+    // console.log('Submit-answer API - User ID:', user.id);
+    // console.log('Submit-answer API - Challenge ID:', challengeId);
 
     // Enhanced validation
     if (!challengeId || !questionId || timeTaken < 0 || timeTaken > 10) {
@@ -61,14 +61,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user is part of this challenge
-    console.log('Querying challenge with ID:', challengeId);
+    // console.log('Querying challenge with ID:', challengeId);
     const { data: challenge, error: challengeError } = await supabase
       .from("challenges")
       .select("challenger_id, opponent_id")
       .eq("challenge_id", challengeId)
       .single();
 
-    console.log('Challenge query result:', { challenge, challengeError });
+    // console.log('Challenge query result:', { challenge, challengeError });
 
     if (challengeError || !challenge) {
       console.error('Challenge not found or error:', challengeError);
@@ -193,6 +193,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         is_correct: isCorrect,
         time_taken: timeTaken,
+        points_scored: scoreCalculation.totalScore,
         answered_at: new Date().toISOString()
       });
 

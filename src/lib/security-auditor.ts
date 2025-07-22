@@ -20,6 +20,7 @@ export class SecurityAuditor {
     request?: Request
   ) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const auditLog: SecurityAuditLog = {
         user_id: userId,
         challenge_id: challengeId,
@@ -32,7 +33,7 @@ export class SecurityAuditor {
       };
 
       // Log to console for now (in production, send to monitoring service)
-      console.log(`[SECURITY AUDIT] ${severity.toUpperCase()}: ${actionType}`, auditLog);
+      // console.log(`[SECURITY AUDIT] ${severity.toUpperCase()}: ${actionType}`, auditLog);
 
       // Could store in database, send to monitoring service, etc.
       // await supabase.from('security_audit_logs').insert(auditLog);

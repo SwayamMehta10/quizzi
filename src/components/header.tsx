@@ -6,36 +6,16 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { FaSignOutAlt } from "react-icons/fa";
 import { notify } from "@/lib/notifications";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { useOptimizedAuth, clearAuthCache } from "@/hooks/use-optimized-auth";
 
 export default function Header() {
   const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useOptimizedAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const isLoggedIn = !!user;
-
-  // Simple auth check - no caching
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]); // Include supabase.auth to satisfy linter
 
   // Close mobile menu on route change and handle body scroll
   useEffect(() => {
@@ -64,17 +44,29 @@ export default function Header() {
     setIsLoading(true);
     setIsMobileMenuOpen(false); // Close mobile menu on sign out
     try {
-      const { error } = await supabase.auth.signOut();
+      console.log("Starting sign out process...");
+      
+      // Sign out with local scope to ensure it works for OAuth users
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      
       if (error) {
+        console.error("Supabase signout error:", error);
         throw error;
       }
+      
+      // Clear the auth cache after successful signout
+      clearAuthCache();
+      
+      console.log("Signout successful, showing notification...");
       notify.auth.signoutSuccess();
-      router.push("/");
+      
+      // Force page refresh to ensure clean state
+      window.location.href = "/";
+      
     } catch (error) {
       console.error("Sign out error:", error);
       notify.error("Error signing out. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only reset loading on error since we redirect on success
     }
   };
 
@@ -89,7 +81,7 @@ export default function Header() {
   return (
     <>
       <header className="border-b border-border/40 bg-background relative z-50">
-        <div className="flex h-14 sm:h-16 items-center px-4 sm:px-6">
+        <div className="flex h-14 sm:h-16 items-center px-2">
           <div className="mr-4 sm:mr-8 flex">
             <Link href="/" className="flex items-center space-x-2">
               <span className="font-extrabold text-xl sm:text-2xl text-primary tracking-tighter">QUIZZI</span>

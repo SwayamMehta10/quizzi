@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -52,6 +52,15 @@ export function ProfileSetupForm({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const supabase = createClient();
 
+	// Cleanup timeout on unmount
+	useEffect(() => {
+		return () => {
+			if (usernameTimeout) {
+				clearTimeout(usernameTimeout);
+			}
+		};
+	}, [usernameTimeout]);
+
 	const form = useForm<ProfileSetupValues>({
 		resolver: zodResolver(profileSetupSchema),
 		defaultValues: {
@@ -67,10 +76,10 @@ export function ProfileSetupForm({
 	const checkUsernameAvailability = async (username: string) => {
 		if (!username || username.length < 3) {
 			setUsernameAvailable(null);
+			setCheckingUsername(false);
 			return;
 		}
 		
-		setCheckingUsername(true);
 		try {
 			const { error } = await supabase
 				.from('profiles')
@@ -86,6 +95,7 @@ export function ProfileSetupForm({
 			}
 		} catch (error) {
 			console.error('Error checking username:', error);
+			setUsernameAvailable(null);
 		} finally {
 			setCheckingUsername(false);
 		}
@@ -98,18 +108,23 @@ export function ProfileSetupForm({
 			clearTimeout(usernameTimeout);
 		}
 		
-		// Only check if username is at least 3 characters (matches schema validation)
-		if (value.length >= 3) {
-			setCheckingUsername(true);
-			// Set a new timeout
-			const timeout = setTimeout(() => {
-				checkUsernameAvailability(value);
-			}, 500); // 500ms debounce
-			
-			setUsernameTimeout(timeout);
-		} else {
+		// Reset states for short usernames
+		if (value.length < 3) {
 			setUsernameAvailable(null);
+			setCheckingUsername(false);
+			return;
 		}
+		
+		// Show checking state immediately for valid length usernames
+		setCheckingUsername(true);
+		setUsernameAvailable(null);
+		
+		// Set a new timeout for checking
+		const timeout = setTimeout(() => {
+			checkUsernameAvailability(value);
+		}, 500); // 500ms debounce
+		
+		setUsernameTimeout(timeout);
 	};
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

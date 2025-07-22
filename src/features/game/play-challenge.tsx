@@ -183,7 +183,7 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
     
     // Submit timeout answer via API
     try {
-      console.log('Submitting timeout answer for question:', currentQuestion?.question_id);
+      // console.log('Submitting timeout answer for question:', currentQuestion?.question_id);
       const response = await fetch('/api/challenges/submit-answer', {
         method: 'POST',
         headers: {
@@ -264,23 +264,32 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
         // Store whether the answer was correct for visual feedback
         setIsAnswerCorrect(isCorrect);
         
+        let newScore = score;
         if (isCorrect && scoreCalculation) {
-          const newScore = score + scoreCalculation.totalScore;
+          newScore = score + scoreCalculation.totalScore;
           setScore(newScore);
-          
-          // If this is the last question, finish the game
-          if (currentQuestionIndex === totalQuestions - 1) {
-            setTimeout(() => {
-              finishGame(newScore);
-            }, 100);
-            return; // Don't call nextQuestion for the last question
-          }
+        }
+        
+        // If this is the last question, finish the game regardless of correctness
+        if (currentQuestionIndex === totalQuestions - 1) {
+          setTimeout(() => {
+            finishGame(newScore);
+          }, 2000); // Give time to show the result feedback
+          return; // Don't call nextQuestion for the last question
         }
       } else {
         console.error('Error submitting answer:', result.error);
         // SECURITY: No client-side fallback calculation to prevent cheating
         // Score must be calculated server-side only
         setIsAnswerCorrect(false); // Default to incorrect if API fails
+        
+        // Even if API fails, finish the game if it's the last question
+        if (currentQuestionIndex === totalQuestions - 1) {
+          setTimeout(() => {
+            finishGame(score);
+          }, 2000);
+          return;
+        }
       }
     } catch (error) {
       console.error('Error submitting answer:', error);
@@ -333,7 +342,7 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
           transition={{ duration: 3, ease: "easeOut" }}
           className="text-center w-full max-w-4xl"
         >
-          <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-12 mb-6 md:mb-8 flex-wrap md:flex-nowrap">
+          <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-12 mb-6 md:mb-8">
             {/* Current Player */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -354,9 +363,9 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
               initial={{ scale: 0 }}
               animate={{ scale: 2 }}
               transition={{ delay: 0, duration: 3, type: "spring" }}
-              className="text-yellow-400 text-2xl sm:text-3xl md:text-4xl order-2 md:order-none"
+              className="text-yellow-400 text-2xl sm:text-3xl md:text-4xl"
             >
-              <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10" fill="currentColor" />
+              <Zap className="w-6 h-6 sm:w-4 sm:h-4 md:w-10 md:h-10" fill="currentColor" />
             </motion.div>
 
             {/* Opponent */}
@@ -395,7 +404,7 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
       <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center px-4">
         <div className="w-full max-w-6xl">
           {/* Players moved to sides */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center relative">
               <PlayerAvatarBlock
                 player={currentPlayer}
                 color="bg-red-500"
@@ -420,6 +429,11 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
                 Get Ready!
                 </div>
               </div>
+
+              {/* Lightning Bolt positioned between players on mobile */}
+              {/* <div className="absolute left-1/2 top-0 transform -translate-x-1/2 md:hidden">
+                <Zap className="w-4 h-4 text-yellow-400" fill="currentColor" />
+              </div> */}
 
               <PlayerAvatarBlock
                 player={otherPlayer}
@@ -464,7 +478,7 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
         {/* Mobile Layout */}
         <div className="md:hidden">
           {/* Players at top */}
-          <div className="flex justify-between items-center mb-4 px-2">
+          <div className="flex justify-between items-center mb-4 px-2 relative">
             <PlayerAvatarBlock
               player={currentPlayer}
               color="bg-red-500"
@@ -473,6 +487,12 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
               usernameClass="text-xs"
               score={score}
             />
+            
+            {/* Lightning Bolt in center */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <Zap className="w-4 h-4 text-yellow-400" fill="currentColor" />
+            </div>
+            
             <PlayerAvatarBlock
               player={otherPlayer}
               color="bg-green-500"

@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { ChallengePageProps } from "@/types/challenges";
 import ChallengeResults from "@/features/game/challenge-results";
+import { CachedQueries } from "@/lib/redis-cache";
 
 interface Answer {
   question_id: string;
@@ -49,37 +50,27 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
   const { challengeId } = await params;
 
   try {
-    // Fetch challenge details with optimized query
-    const { data: challenge, error: challengeError } = await supabase
-      .from("challenges")
-      .select(`
-        *,
-        challenger:challenger_id (
-          id, username, avatar_url, gender
-        ),
-        opponent:opponent_id (
-          id, username, avatar_url, gender
-        ),
-        topic:topic_id (
-          topic_id, name
-        )
-      `)
-      .eq("challenge_id", challengeId)
-      .single();
-
-    if (challengeError || !challenge) {
+    // console.log('ChallengeResultsPage: Starting optimized challenge fetch for:', challengeId);
+    
+    // Use server-side cached query with proper auth context
+    const challenge = await CachedQueries.assembleChallengeWithCacheServer(challengeId, supabase);
+    if (!challenge) {
+      console.error('ChallengeResultsPage: Challenge not found or no access:', challengeId);
       notFound();
     }
 
     // Verify user access
     if (challenge.challenger_id !== user.id && challenge.opponent_id !== user.id) {
+      console.error('ChallengeResultsPage: User does not have access to challenge:', challengeId);
       redirect('/challenges');
     }
 
-    // Check completion status using challenge_results table
+    // console.log('ChallengeResultsPage: Successfully got challenge data with server auth');
+
+    // Get completion status - lightweight query
     const { data: allResults } = await supabase
       .from("challenge_results")
-      .select("*")
+      .select("user_id, score")
       .eq("challenge_id", challengeId);
 
     if (!allResults || allResults.length === 0) {
@@ -119,30 +110,16 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       );
     }
 
-    // Parallel queries for better performance
+    // Optimized separate queries instead of heavy JOINs
     const [answersResult, questionsResult] = await Promise.all([
+      // Lightweight answers query - no JOINs
       supabase
         .from("answers")
-        .select(`
-          *,
-          question:question_id (
-            question_id,
-            text,
-            choices!choices_question_id_fkey (
-              choice_id,
-              text,
-              is_correct
-            )
-          ),
-          choice:choice_id (
-            choice_id,
-            text,
-            is_correct
-          )
-        `)
+        .select("user_id, question_id, choice_id, is_correct, time_taken, points_scored, answered_at")
         .eq("challenge_id", challengeId)
         .order("answered_at"),
 
+      // Simple question order mapping
       supabase
         .from("challenge_questions")
         .select("question_id, order_index")
@@ -155,12 +132,32 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       throw new Error('Failed to fetch challenge data');
     }
 
-    // Debug logging to see what data we're getting
-    // console.log("Answers data:", answersResult.data?.length, "records");
-    // console.log("Challenge participants:", challenge.challenger_id, challenge.opponent_id);
-    // console.log("Answer user IDs:", [...new Set(answersResult.data?.map(a => a.user_id))]);
+    // Get unique question IDs from answers
+    const questionIds = [...new Set(answersResult.data?.map(a => a.question_id) || [])];
+    const choiceIds = [...new Set(answersResult.data?.map(a => a.choice_id).filter(Boolean) || [])];
 
-    // Process data using stored points
+    // Lightweight separate queries for questions and choices
+    const [questionsData, choicesData] = await Promise.all([
+      questionIds.length > 0 ? supabase
+        .from("questions")
+        .select("question_id, text")
+        .in("question_id", questionIds) : { data: [] },
+      
+      choiceIds.length > 0 ? supabase
+        .from("choices")
+        .select("choice_id, question_id, text, is_correct")
+        .in("choice_id", choiceIds) : { data: [] }
+    ]);
+
+    // Create lookup maps for fast access
+    const questionsMap = new Map(
+      (questionsData.data || []).map(q => [q.question_id, q])
+    );
+    const choicesMap = new Map(
+      (choicesData.data || []).map(c => [c.choice_id, c])
+    );
+
+    // Process data using optimized lookups
     const questionOrderMap = new Map(
       questionsResult.data.map(cq => [cq.question_id, cq.order_index])
     );
@@ -168,31 +165,27 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
     const challengerAnswers: Answer[] = [];
     const opponentAnswers: Answer[] = [];
 
-    // console.log("Question order mapping:", Array.from(questionOrderMap.entries()));
-
     answersResult.data?.forEach(answer => {
       const questionOrder = questionOrderMap.get(answer.question_id) || 0;
-      const correctChoice = answer.question.choices.find((c: { is_correct: boolean; text: string }) => c.is_correct)?.text || 'N/A';
+      const question = questionsMap.get(answer.question_id);
+      const choice = answer.choice_id ? choicesMap.get(answer.choice_id) : null;
+      
+      // Get correct choice for this question
+      const correctChoice = (choicesData.data || [])
+        .find(c => c.question_id === answer.question_id && c.is_correct)?.text || 'N/A';
       
       const processedAnswer: Answer = {
         question_id: answer.question_id,
-        question_text: answer.question.text,
+        question_text: question?.text || 'Unknown Question',
         user_id: answer.user_id,
         choice_id: answer.choice_id,
-        choice_text: answer.choice?.text || null,
+        choice_text: choice?.text || null,
         is_correct: answer.is_correct,
         time_taken: answer.time_taken || 10,
         correct_choice: correctChoice,
         question_order: questionOrder,
         points_scored: answer.points_scored || 0
       };
-
-      // console.log("Processing answer:", {
-      //   user_id: answer.user_id,
-      //   question_order: questionOrder,
-      //   is_challenger: answer.user_id === challenge.challenger_id,
-      //   is_opponent: answer.user_id === challenge.opponent_id
-      // });
 
       if (answer.user_id === challenge.challenger_id) {
         challengerAnswers.push(processedAnswer);
@@ -207,21 +200,18 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
     const challengerScore = challengerAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
     const opponentScore = opponentAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
 
-    // console.log("Processed answers - Challenger:", challengerAnswers.length, "Opponent:", opponentAnswers.length);
-    // console.log("Calculated scores - Challenger:", challengerScore, "Opponent:", opponentScore);
-
     const challengerResult: PlayerResult = {
       user_id: challenge.challenger_id,
-      username: challenge.challenger.username,
-      avatar_url: challenge.challenger.avatar_url || '',
+      username: challenge.challenger?.username || 'Unknown Player',
+      avatar_url: challenge.challenger?.avatar_url || '',
       total_score: challengerScore,
       answers: challengerAnswers.sort((a, b) => a.question_order - b.question_order)
     };
 
     const opponentResult: PlayerResult = {
       user_id: challenge.opponent_id,
-      username: challenge.opponent.username,
-      avatar_url: challenge.opponent.avatar_url || '',
+      username: challenge.opponent?.username || 'Unknown Player',
+      avatar_url: challenge.opponent?.avatar_url || '',
       total_score: opponentScore,
       answers: opponentAnswers.sort((a, b) => a.question_order - b.question_order)
     };
@@ -248,7 +238,21 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       challenger: challengerResult,
       opponent: opponentResult,
       topicName: challenge.topic?.name || 'Unknown Topic',
-      challenge,
+      challenge: {
+        challenger_id: challenge.challenger_id,
+        opponent_id: challenge.opponent_id,
+        challenger: { 
+          username: challenge.challenger?.username || 'Unknown Player', 
+          avatar_url: challenge.challenger?.avatar_url || '' 
+        },
+        opponent: { 
+          username: challenge.opponent?.username || 'Unknown Player', 
+          avatar_url: challenge.opponent?.avatar_url || '' 
+        },
+        topic: { 
+          name: challenge.topic?.name || 'Unknown Topic' 
+        }
+      },
       winner: winner,
       isCurrentUserWinner: winner === user.id,
       isTie: winner === null

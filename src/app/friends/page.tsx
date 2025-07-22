@@ -12,38 +12,16 @@ import PendingRequests from "@/features/friends/pending-requests";
 import FriendsList from "@/features/friends/friends-list";
 import { UserProfile } from "@/types/friends";
 import Loader from "@/components/loader";
-import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { OptimizedQueries } from "@/lib/optimized-queries";
+import { useOptimizedAuth } from "@/hooks/use-optimized-auth";
 
 export default function FriendsPage() {
-	const [loading, setLoading] = useState(false); // Start with false since we have userLoading
-	const [userLoading, setUserLoading] = useState(true);
+	const [loading, setLoading] = useState(true); // Start with true to show loader initially
 	const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 	const [friends, setFriends] = useState<UserProfile[]>([]);
 	const [pendingRequests, setPendingRequests] = useState<UserProfile[]>([]);
-	const [user, setUser] = useState<User | null>(null);
+	const { user, loading: userLoading } = useOptimizedAuth();
 	const router = useRouter();
-	const supabase = createClient();
-
-	useEffect(() => {
-		const getUser = async () => {
-			try {
-				const { data: { user }, error } = await supabase.auth.getUser();
-				if (error) {
-					setUser(null);
-				} else {
-					setUser(user);
-				}
-			} catch (error) {
-				console.error('Friends page: Error in getUser:', error);
-				setUser(null);
-			} finally {
-				setUserLoading(false);
-			}
-		};
-		getUser();
-	}, [supabase]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -52,10 +30,11 @@ export default function FriendsPage() {
 				return;
 			}
 			if (!user) {
+				setLoading(false); // Stop loading before redirect
 				router.push("/");
 				return;
 			}
-			setLoading(true);
+			
 			try {
 				// Use optimized queries with caching
 				const [friendsData, pendingRequestsData] = await Promise.all([
