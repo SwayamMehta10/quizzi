@@ -7,7 +7,10 @@ import { createClient } from "@/utils/supabase/client";
 import { FaSignOutAlt } from "react-icons/fa";
 import { notify } from "@/lib/notifications";
 import { AnimatePresence, motion } from "framer-motion";
+import { MdOutlineLeaderboard, MdOutlineTopic } from "react-icons/md";
+import { GiAchievement } from "react-icons/gi";
 import { useOptimizedAuth, clearAuthCache } from "@/hooks/use-optimized-auth";
+import { UsersIcon, SwordsIcon } from "lucide-react";
 
 export default function Header() {
   const supabase = createClient();
@@ -210,9 +213,9 @@ export default function Header() {
             >
               <div className="flex flex-col h-full">
                 {/* Menu Header */}
-                <div className="p-4 border-b border-border">
+                <div className="p-3 border-b border-border">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-lg text-primary tracking-tight">Menu</span>
+                    <span className="font-bold text-lg text-primary tracking-tight px-4">Menu</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -235,9 +238,7 @@ export default function Header() {
                       className="flex items-center px-4 py-3 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors font-medium"
                       onClick={handleMobileNavClick}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
-                      </svg>
+                      <MdOutlineTopic className="w-6 h-6 text-primary mr-3" />
                       Topics
                     </Link>
                     <Link 
@@ -245,14 +246,7 @@ export default function Header() {
                       className="flex items-center px-4 py-3 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors font-medium"
                       onClick={handleMobileNavClick}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                        <path d="M4 22h16"/>
-                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-                      </svg>
+                      <SwordsIcon className="w-6 h-6 text-primary mr-3" />
                       Challenges
                     </Link>
                     <Link 
@@ -260,12 +254,7 @@ export default function Header() {
                       className="flex items-center px-4 py-3 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors font-medium"
                       onClick={handleMobileNavClick}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                        <path d="M16 16v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4"/>
-                        <path d="M7 8a5 5 0 0 1 10 0"/>
-                        <path d="M15 8v8"/>
-                        <path d="M9 8v8"/>
-                      </svg>
+                      <MdOutlineLeaderboard className="w-6 h-6 text-primary mr-3" />
                       Leaderboard
                     </Link>
                     <Link 
@@ -273,12 +262,7 @@ export default function Header() {
                       className="flex items-center px-4 py-3 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors font-medium"
                       onClick={handleMobileNavClick}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="m19 8 2 2-2 2"/>
-                        <path d="m17 12h6"/>
-                      </svg>
+                      <UsersIcon className="w-6 h-6 text-primary mr-3"/>
                       Friends
                     </Link>
                     <Link 
@@ -286,25 +270,22 @@ export default function Header() {
                       className="flex items-center px-4 py-3 text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors font-medium"
                       onClick={handleMobileNavClick}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                        <circle cx="12" cy="8" r="6"/>
-                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-                      </svg>
+                      <GiAchievement className="w-6 h-6 text-primary mr-3"/>
                       Achievements
                     </Link>
                   </div>
                 </nav>
 
                 {/* Mobile Auth Section */}
-                <div className="p-4 border-t border-border">
+                <div className="px-8 py-4 border-t border-border">
                   {isLoggedIn ? (
                     <Button 
                       variant="destructive" 
                       onClick={handleSignOut} 
-                      className="w-full justify-start font-medium"
+                      className="w-full font-medium"
                       disabled={isLoading}
                     >
-                      <FaSignOutAlt className="mr-3" />
+                      <FaSignOutAlt />
                       Sign Out
                     </Button>
                   ) : (

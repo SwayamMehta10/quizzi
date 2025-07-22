@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { GiAchievement } from "react-icons/gi";
 
 export default function AchievementsPage() {
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
+    <div className="container mx-auto px-4 py-8 min-h-[calc(100vh-8rem)] flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -17,21 +18,7 @@ export default function AchievementsPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="relative"
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="80" 
-            height="80" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className="mx-auto text-primary mb-6"
-          >
-            <circle cx="12" cy="8" r="6"/>
-            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-          </svg>
+          <GiAchievement className="w-24 h-24 mx-auto text-primary" />
         </motion.div>
 
         <motion.h1
