@@ -3,7 +3,8 @@ import "./globals.css";
 import Header from "@/components/header";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata, Viewport } from 'next';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from '@vercel/analytics/next';
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -45,6 +46,7 @@ export default function RootLayout({
           <main className="flex-1 px-2 sm:px-4 lg:px-0">
             {children}
             <SpeedInsights />
+            <Analytics />
           </main>
         </div>
         <Toaster />
