@@ -235,6 +235,8 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
     
     setSelectedChoice(choiceIndex);
     setShowResult(true);
+    // Initialize as null to show we're waiting for API response
+    setIsAnswerCorrect(null);
     
     const timeTaken = 10 - timeLeft;
     const selectedChoiceId = currentQuestion.choice_ids[choiceIndex];
@@ -260,6 +262,8 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
 
       if (response.ok && result.success) {
         const { scoreCalculation, isCorrect } = result.result;
+        
+        // console.log('API Response - isCorrect:', isCorrect, 'result:', result);
         
         // Store whether the answer was correct for visual feedback
         setIsAnswerCorrect(isCorrect);
@@ -312,19 +316,29 @@ export default function PlayChallenge({ challenge, questions, currentUser }: Pla
   const getChoiceButtonClass = (choiceIndex: number) => {
     const baseClasses = "h-12 sm:h-14 md:h-16 w-full text-center justify-center px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base md:text-lg font-medium rounded-xl transition-all duration-300 transform tracking-tight";
     
+    // console.log('Button class check:', { 
+    //   choiceIndex, 
+    //   selectedChoice, 
+    //   showResult, 
+    //   isAnswerCorrect 
+    // });
+    
     if (!showResult) {
       return `${baseClasses} bg-white text-black border border-gray-300 hover:bg-gray-50 hover:scale-[1.02]`;
     }
     
     // Show visual feedback based on answer correctness without exposing correct answers
     if (choiceIndex === selectedChoice) {
-      if (isAnswerCorrect === true) {
+      // Wait for API response - if still null, show loading state
+      if (isAnswerCorrect === null) {
+        // console.log('Setting button to BLUE (loading API response)');
+        return `${baseClasses} bg-blue-500 text-white border border-blue-500 animate-pulse`;
+      } else if (isAnswerCorrect === true) {
+        // console.log('Setting button to GREEN');
         return `${baseClasses} bg-green-500 text-white border border-green-500 shadow-lg shadow-green-500/25`;
       } else if (isAnswerCorrect === false) {
+        // console.log('Setting button to RED');
         return `${baseClasses} bg-red-500 text-white border border-red-500 shadow-lg shadow-red-500/25`;
-      } else {
-        // Fallback in case answer correctness is not determined yet
-        return `${baseClasses} bg-blue-500 text-white border border-blue-500`;
       }
     }
     

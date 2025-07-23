@@ -235,20 +235,35 @@ function HomeContent() {
         if (event === "PASSWORD_RECOVERY") {
           router.push("/reset-password");
         } else if (event === 'SIGNED_IN' && session) {
-          // Wait a bit for profile to be created by trigger
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const isOAuthSignIn = session.user.app_metadata.provider !== 'email';
           
-          const { data: profileData, error: profileError } = await supabase
+          // Wait longer for OAuth users as profile creation might take more time
+          await new Promise(resolve => setTimeout(resolve, isOAuthSignIn ? 3000 : 1000));
+          
+          let { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
+          
+          // If profile doesn't exist for OAuth users, try one more time with additional delay
+          if (profileError && profileError.code === 'PGRST116' && isOAuthSignIn) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            const retry = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            profileData = retry.data;
+            profileError = retry.error;
+          }
           
           if (profileError && profileError.code !== 'PGRST116') {
             console.error("Error fetching profile after sign-in:", profileError);
           }
           
           setProfile(profileData);
+          console.log("Profile after sign-in:", profileData);
           
           // Redirect to complete-profile if profile is missing or incomplete
           if (!profileData || !profileData.username) {
