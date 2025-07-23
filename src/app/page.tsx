@@ -235,10 +235,8 @@ function HomeContent() {
         if (event === "PASSWORD_RECOVERY") {
           router.push("/reset-password");
         } else if (event === 'SIGNED_IN' && session) {
-          const isOAuthSignIn = session.user.app_metadata.provider !== 'email';
-          
           // Wait a bit for profile to be created by trigger
-          await new Promise(resolve => setTimeout(resolve, isOAuthSignIn ? 2000 : 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -256,7 +254,6 @@ function HomeContent() {
           if (!profileData || !profileData.username) {
             router.push("/complete-profile");
           }
-          // For OAuth users with complete profiles, they'll stay on home page
         }
       }
     );
