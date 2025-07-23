@@ -235,23 +235,29 @@ function HomeContent() {
         if (event === "PASSWORD_RECOVERY") {
           router.push("/reset-password");
         } else if (event === 'SIGNED_IN' && session) {
-          // Wait a bit for profile to be created by trigger
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // For OAuth users, let the redirect URL handle the flow
+          // Only handle profile redirect for email/password sign-ins
+          const isOAuthSignIn = session.user.app_metadata.provider !== 'email';
           
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profileError && profileError.code !== 'PGRST116') {
-            console.error("Error fetching profile after sign-in:", profileError);
-          }
-          
-          setProfile(profileData);
-          
-          if (!profileData || !profileData.username) {
-            router.push("/complete-profile");
+          if (!isOAuthSignIn) {
+            // Wait a bit for profile to be created by trigger
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError && profileError.code !== 'PGRST116') {
+              console.error("Error fetching profile after sign-in:", profileError);
+            }
+            
+            setProfile(profileData);
+            
+            if (!profileData || !profileData.username) {
+              router.push("/complete-profile");
+            }
           }
         }
       }
@@ -318,7 +324,7 @@ function HomeContent() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/` // or a callback URL
+          redirectTo: `${window.location.origin}/complete-profile`
         }
       });
       

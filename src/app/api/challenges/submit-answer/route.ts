@@ -79,8 +79,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Note: Removed status check since status column doesn't exist in the database
-
     // Check if answer already exists (prevent duplicate submissions)
     const { data: existingAnswer } = await supabase
       .from("answers")
@@ -117,7 +115,7 @@ export async function POST(request: NextRequest) {
       const lastAnswer = new Date(recentAnswers[0].answered_at).getTime();
       const timeSinceLastAnswer = Date.now() - lastAnswer;
       
-      if (timeSinceLastAnswer < 2000) { // Minimum 2 seconds between answers
+      if (timeSinceLastAnswer < 500) { // Minimum 0.5 seconds between answers
         // SECURITY: Log rate limiting hit
         await SecurityAuditor.logSecurityEvent(
           supabase,

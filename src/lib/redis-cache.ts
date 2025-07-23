@@ -27,6 +27,7 @@ interface CachedChallenge {
   opponent_status: string;
   created_at: string;
   topic_id: string;
+  winner_id: string | null;
 }
 
 /**
@@ -184,7 +185,7 @@ export class CachedQueries {
     
     const { data, error } = await supabase
       .from('challenges')
-      .select('challenge_id, challenger_id, opponent_id, challenger_status, opponent_status, created_at, topic_id')
+      .select('challenge_id, challenger_id, opponent_id, challenger_status, opponent_status, created_at, topic_id, winner_id')
       .eq('challenge_id', challengeId)
       .single();
     

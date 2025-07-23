@@ -196,15 +196,15 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       }
     });
 
-    // Calculate total scores from stored points
-    const challengerScore = challengerAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
-    const opponentScore = opponentAnswers.reduce((sum, answer) => sum + (answer.points_scored || 0), 0);
+    // Use stored scores from challenge_results instead of recalculating
+    const challengerScore = allResults.find(r => r.user_id === challenge.challenger_id)?.score || 0;
+    const opponentScore = allResults.find(r => r.user_id === challenge.opponent_id)?.score || 0;
 
     const challengerResult: PlayerResult = {
       user_id: challenge.challenger_id,
       username: challenge.challenger?.username || 'Unknown Player',
       avatar_url: challenge.challenger?.avatar_url || '',
-      total_score: challengerScore,
+      total_score: challengerScore, // Use stored score
       answers: challengerAnswers.sort((a, b) => a.question_order - b.question_order)
     };
 
@@ -212,27 +212,31 @@ export default async function ChallengeResultsPage({ params }: ChallengePageProp
       user_id: challenge.opponent_id,
       username: challenge.opponent?.username || 'Unknown Player',
       avatar_url: challenge.opponent?.avatar_url || '',
-      total_score: opponentScore,
+      total_score: opponentScore, // Use stored score
       answers: opponentAnswers.sort((a, b) => a.question_order - b.question_order)
     };
 
-    // Determine winner
-    let winner: string | null = null;
-    if (challengerResult.total_score > opponentResult.total_score) {
-      winner = challenge.challenger_id;
-    } else if (opponentResult.total_score > challengerResult.total_score) {
-      winner = challenge.opponent_id;
-    } else {
-      winner = null; // It's a tie
+    // Use stored winner_id if available, otherwise calculate and store
+    let winner: string | null = challenge.winner_id;
+    if (winner === null) {
+      // Only calculate if not already stored
+      if (challengerScore > opponentScore) {
+        winner = challenge.challenger_id;
+      } else if (opponentScore > challengerScore) {
+        winner = challenge.opponent_id;
+      }
+      // Store the calculated winner for future visits
+      await supabase
+        .from('challenges')
+        .update({ 
+          winner_id: winner,
+          completed_at: new Date().toISOString()
+        })
+        .eq('challenge_id', challengeId);
+      
+      // Invalidate cache since we updated the challenge
+      CachedQueries.invalidateChallenge(challengeId);
     }
-
-    // Update the challenge with completion timestamp (if not already set)
-    await supabase
-      .from('challenges')
-      .update({ 
-        completed_at: new Date().toISOString()
-      })
-      .eq('challenge_id', challengeId);
 
     const resultsData: ChallengeResultsResponse = {
       challenger: challengerResult,
