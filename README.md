@@ -36,18 +36,5 @@ quizzi/
 └── public/                      # Static Assets
 ```
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
 ## Deployment
-
-The application is designed to be deployed to Vercel with Supabase as the backend.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a custom font from Vercel.
+The web app has been deployed using vercel. You can check it out at: https://quizzi-eight.vercel.app/
